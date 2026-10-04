@@ -47,6 +47,45 @@ namespace TaskPad
         readonly Border _progressFill = new Border { Height = 4, CornerRadius = new CornerRadius(2), Background = Theme.Accent, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
         readonly DispatcherTimer _statsTimer;
 
+        readonly Border _welcomeHost = new Border { Visibility = Visibility.Collapsed };
+        public bool WelcomeVisible => _welcomeHost.Visibility == Visibility.Visible;
+
+        public void ShowWelcome()
+        {
+            _welcomeHost.Child = new WelcomePage(this);
+            _welcomeHost.Visibility = Visibility.Visible;
+        }
+
+        public void HideWelcome()
+        {
+            _welcomeHost.Visibility = Visibility.Collapsed;
+            _welcomeHost.Child = null;
+            ActiveTab?.Editor.TextArea.Focus();
+        }
+
+        public void RefreshWelcome() { if (WelcomeVisible) ShowWelcome(); }
+
+        public void OpenFileDialog() => OpenDialog();
+
+        public void ShowKeywords()
+        {
+            var g = ActiveGroup ?? Groups.First();
+            if (g.Active == null) NewTab(g);
+            KeywordsPopup.Show(g.Bar, () => g.Active?.Editor, ShowCheatSheet);
+        }
+
+        public void ShowCodeThemesAt(FrameworkElement anchor) => ShowCodeThemes(anchor);
+
+        /// The interactive tour, as an untitled note (only saved if the user wants to).
+        public void OpenTour()
+        {
+            var t = NewTab(null, WelcomePage.TourText);
+            t.Doc.UntitledName = "Tour";
+            t.Doc.Dirty = false;
+            t.Doc.Raise();
+            UpdateStats();
+        }
+
         public ExplorerPanel Explorer;
         readonly Grid _body = new Grid();
         FrameworkElement _explorerEdge;
@@ -193,6 +232,7 @@ namespace TaskPad
 
             var layer = new Grid();
             layer.Children.Add(_root);
+            layer.Children.Add(_welcomeHost);
             layer.Children.Add(_overlay);
             layer.Children.Add(_toast);
 
@@ -665,6 +705,8 @@ namespace TaskPad
             m.Items.Add(new Separator());
             Item("Keywords", "Ctrl+K", () => KeywordsPopup.Show(anchor, () => g.Active?.Editor, ShowCheatSheet));
             Item("Syntax cheat sheet", "F1", ShowCheatSheet);
+            Item("Welcome", null, ShowWelcome);
+            Item("Take the tour", null, OpenTour);
             m.Items.Add(new Separator());
             Item($"Check for updates  (v{Updater.Short(Updater.Current)})", null, () => Updater.Check(silent: false));
             Item("Auto-install updates", null, () =>
@@ -792,6 +834,7 @@ namespace TaskPad
             else if (ctrl && key == Key.K && g != null) KeywordsPopup.Show(g.Bar, () => g.Active?.Editor, ShowCheatSheet);
             else if (ctrl && key >= Key.D1 && key <= Key.D9 && g != null && key - Key.D1 < g.Tabs.Count) g.Activate(g.Tabs[key - Key.D1]);
             else handled = false;
+            if (!handled && key == Key.Escape && WelcomeVisible) { HideWelcome(); handled = true; }
             if (handled) e.Handled = true;
         }
 

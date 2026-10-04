@@ -34,6 +34,12 @@ Silent install / uninstall: `TaskPad-Setup.exe --install --quiet` and
 
 Both are the same program and both update themselves.
 
+## First run
+
+TaskPad opens with a **Welcome** page: start a note, open a file or folder, recent files, a 2-minute interactive
+**tour** note, handy keys, and dark/light + code colours. Bring it back anytime with `⋯` → **Welcome**, or tick
+*Show this page when TaskPad starts*.
+
 ## Why
 
 Notepad is too plain, VS Code is too heavy for a to-do list. TaskPad opens instantly from the Explorer

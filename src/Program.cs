@@ -131,6 +131,12 @@ namespace TaskPad
                 win.Show();
             }
             if (!standalone) StartPipeServer();
+            if (!Workspace.Settings.WelcomeSeen || Workspace.Settings.ShowWelcome)
+            {
+                win.ShowWelcome();
+                Workspace.Settings.WelcomeSeen = true;
+                Workspace.Settings.Save();
+            }
             Updater.CleanupOld();
             TaskFile.CleanupLegacyCache();
             if (!standalone) Shell.EnsureTaskFiles();

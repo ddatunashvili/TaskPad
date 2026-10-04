@@ -28,6 +28,8 @@ namespace TaskPad
             }
         }
 
+        public static List<string> List() => Closed.ToList();
+
         public static void Add(string path)
         {
             if (string.IsNullOrEmpty(path)) return;
