@@ -11,6 +11,7 @@ namespace TaskPad
         static readonly string[] Extensions = { ".txt", ".md", ".todo", ".log", ".task" };
         const string Verb = "TaskPad";
         const string NewVerb = "TaskPadNew";
+        const string FolderVerb = "TaskPadFolder";
 
         static string ExePath => System.Reflection.Assembly.GetExecutingAssembly().Location;
 
@@ -49,9 +50,16 @@ namespace TaskPad
                     }
                     using (var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{root}\shell\{NewVerb}\command"))
                         k.SetValue("", $"\"{exe}\" --new \"{arg}\"");
+                    using (var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{root}\shell\{FolderVerb}"))
+                    {
+                        k.SetValue("", "Open folder in TaskPad");
+                        k.SetValue("Icon", $"\"{exe}\",0");
+                    }
+                    using (var k = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{root}\shell\{FolderVerb}\command"))
+                        k.SetValue("", $"\"{exe}\" \"{arg}\"");
                 }
                 if (showResult)
-                    MessageBox.Show("Context menu added.\n\nRight-click a .txt / .md / .todo / .log file -> \"Open with TaskPad\".\nRight-click a folder background -> \"New task list (TaskPad)\".\n\nOn Windows 11 these are under \"Show more options\" (Shift+F10).\nIf you move TaskPad.exe, register again.",
+                    MessageBox.Show("Context menu added.\n\nRight-click a .txt / .md / .todo / .log file -> \"Open with TaskPad\".\nRight-click a folder -> \"Open folder in TaskPad\" or \"New TaskPad note\".\n\nOn Windows 11 these are under \"Show more options\" (Shift+F10).\nIf you move TaskPad.exe, register again.",
                         "TaskPad", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -121,6 +129,8 @@ namespace TaskPad
                 Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\SystemFileAssociations\{ext}\shell\{Verb}", false);
             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\Directory\Background\shell\{NewVerb}", false);
             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\Directory\shell\{NewVerb}", false);
+            Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\Directory\Background\shell\{FolderVerb}", false);
+            Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\Directory\shell\{FolderVerb}", false);
             if (showResult)
                 MessageBox.Show("Context menu removed.", "TaskPad", MessageBoxButton.OK, MessageBoxImage.Information);
         }

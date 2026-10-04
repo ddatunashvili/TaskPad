@@ -20,7 +20,8 @@ namespace TaskPad
         public readonly TranslateTransform Shift = new TranslateTransform();
         public EditorGroup Group;
 
-        readonly TextBlock _title, _close;
+        readonly TextBlock _title, _close, _folder;
+        readonly UIElement _buttons;
 
         public TabView(Doc doc)
         {
@@ -56,9 +57,28 @@ namespace TaskPad
             _close.MouseLeftButtonUp += (s, e) => { e.Handled = true; Group?.Owner.CloseTab(this); };
             _close.MouseLeftButtonDown += (s, e) => e.Handled = true;
 
+            _folder = new TextBlock
+            {
+                Text = "\uE838", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 11,
+                Width = 18, Height = 18, TextAlignment = TextAlignment.Center, Padding = new Thickness(0, 3, 0, 0),
+                Foreground = Theme.FgDim, VerticalAlignment = VerticalAlignment.Center, Cursor = Cursors.Hand,
+                ToolTip = "Open containing folder",
+            };
+            _folder.MouseLeftButtonDown += (s, e) => e.Handled = true;
+            _folder.MouseLeftButtonUp += (s, e) =>
+            {
+                e.Handled = true;
+                if (Doc.Path != null) System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + Doc.Path + "\"");
+            };
+            _folder.MouseEnter += (s, e) => _folder.Foreground = Theme.Fg;
+            _folder.MouseLeave += (s, e) => _folder.Foreground = Theme.FgDim;
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+            buttons.Children.Add(_folder);
+            buttons.Children.Add(_close);
+            _buttons = buttons;
             var sp = new StackPanel { Orientation = Orientation.Horizontal };
             sp.Children.Add(_title);
-            sp.Children.Add(_close);
+            sp.Children.Add(buttons);
             Header = new Border
             {
                 Child = sp,
@@ -70,7 +90,7 @@ namespace TaskPad
             Header.MouseUp += (s, e) => { if (e.ChangedButton == MouseButton.Middle) Group?.Owner.CloseTab(this); };
             Header.MouseEnter += (s, e) => Refresh();
             Header.MouseLeave += (s, e) => Refresh();
-            TabDrag.Attach(this, _close);
+            TabDrag.Attach(this, _buttons);
 
             doc.Changed += Refresh;
             Editor.TextArea.Caret.PositionChanged += (s, e) => { if (IsFocusedTab) Group.Owner.UpdateStatus(); };
@@ -115,6 +135,7 @@ namespace TaskPad
             Header.ToolTip = Doc.Path ?? Doc.Name;
             bool hover = Header.IsMouseOver;
             _close.Text = Doc.Dirty && !hover ? "●" : (hover || active ? "✕" : "");
+            _folder.Visibility = Doc.Path != null && (hover || active) ? Visibility.Visible : Visibility.Collapsed;
             _close.FontSize = Doc.Dirty && !hover ? 10 : 12;
             if (active && focusedGroup) Group.Owner.UpdateTitle();
         }

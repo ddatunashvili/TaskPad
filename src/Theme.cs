@@ -83,7 +83,7 @@ namespace TaskPad
                 v.ApplyTheme();
                 v.Refresh();
             }
-            foreach (var w in Workspace.Windows) foreach (var g in w.Groups) g.RefreshHeaders();
+            foreach (var w in Workspace.Windows) { foreach (var g in w.Groups) g.RefreshHeaders(); w.Explorer.ApplyItemStyle(); }
         }
     }
 }

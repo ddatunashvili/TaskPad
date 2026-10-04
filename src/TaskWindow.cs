@@ -47,6 +47,37 @@ namespace TaskPad
         readonly Border _progressFill = new Border { Height = 4, CornerRadius = new CornerRadius(2), Background = Theme.Accent, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
         readonly DispatcherTimer _statsTimer;
 
+        public ExplorerPanel Explorer;
+        readonly Grid _body = new Grid();
+        FrameworkElement _explorerEdge;
+
+        public bool ExplorerVisible => Explorer.Visibility == Visibility.Visible;
+
+        public void SetExplorerVisible(bool on)
+        {
+            Explorer.Visibility = _explorerEdge.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+            Workspace.Settings.ExplorerVisible = on;
+        }
+
+        public void ToggleExplorer() => SetExplorerVisible(!ExplorerVisible);
+
+        /// Opens a folder as the project in the sidebar (a new window if this one already shows another folder).
+        public void OpenFolder(string dir)
+        {
+            dir = Path.GetFullPath(dir);
+            if (Explorer.Root != null && !string.Equals(Explorer.Root.TrimEnd('\\'), dir.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) && TabCount > 0)
+            {
+                var w = new TaskWindow(false) { Left = Left + 40, Top = Top + 40, Width = ActualWidth, Height = ActualHeight };
+                w.NewTab();
+                w.Show();
+                w.OpenFolder(dir);
+                return;
+            }
+            Explorer.Open(dir);
+            SetExplorerVisible(true);
+            Activate();
+        }
+
         public EditorGroup ActiveGroup { get; private set; }
         public TabView ActiveTab => ActiveGroup?.Active;
         public int TabCount => Groups.Sum(g => g.Tabs.Count);
@@ -133,6 +164,17 @@ namespace TaskPad
         {
             var root = new DockPanel();
             var status = new DockPanel { Height = 24, Background = Theme.Chrome, LastChildFill = false };
+            var explorerToggle = new TextBlock
+            {
+                Text = "\uE8B7", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13,
+                Foreground = Theme.FgDim, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0),
+                Cursor = Cursors.Hand, ToolTip = "Explorer (Ctrl+B)",
+            };
+            explorerToggle.MouseLeftButtonUp += (s, e) => ToggleExplorer();
+            explorerToggle.MouseEnter += (s, e) => explorerToggle.Foreground = Theme.Fg;
+            explorerToggle.MouseLeave += (s, e) => explorerToggle.Foreground = Theme.FgDim;
+            DockPanel.SetDock(explorerToggle, Dock.Left);
+            status.Children.Add(explorerToggle);
             _stPos.Margin = new Thickness(12, 0, 16, 0);
             DockPanel.SetDock(_stPos, Dock.Left);
             status.Children.Add(_stPos);
@@ -152,7 +194,31 @@ namespace TaskPad
             layer.Children.Add(_root);
             layer.Children.Add(_overlay);
             layer.Children.Add(_toast);
-            root.Children.Add(layer);
+
+            // [explorer | splitter | editors]
+            _body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Explorer = new ExplorerPanel(this);
+            var edge = new Border { Width = 1, Background = Theme.ChromeBorder, HorizontalAlignment = HorizontalAlignment.Left };
+            var split = new System.Windows.Controls.Primitives.Thumb { Width = 5, Cursor = Cursors.SizeWE, Opacity = 0 };
+            split.DragDelta += (s, e) =>
+            {
+                Explorer.Width = Math.Max(160, Math.Min(ActualWidth - 300, Explorer.Width + e.HorizontalChange));
+                Workspace.Settings.ExplorerWidth = Explorer.Width;
+            };
+            var splitHost = new Grid { Width = 5 };
+            splitHost.Children.Add(edge);
+            splitHost.Children.Add(split);
+            Grid.SetColumn(Explorer, 0);
+            Grid.SetColumn(splitHost, 1);
+            Grid.SetColumn(layer, 2);
+            _body.Children.Add(Explorer);
+            _body.Children.Add(splitHost);
+            _body.Children.Add(layer);
+            _explorerEdge = splitHost;
+            SetExplorerVisible(Workspace.Settings.ExplorerVisible);
+            root.Children.Add(_body);
             return root;
         }
 
@@ -371,6 +437,7 @@ namespace TaskPad
         public void OpenFile(string path)
         {
             path = Path.GetFullPath(path);
+            if (Directory.Exists(path)) { OpenFolder(path); return; }
             var g = ActiveGroup ?? Groups.First();
             var existing = Groups.SelectMany(x => x.Tabs).FirstOrDefault(t => t.Doc.Path != null && string.Equals(t.Doc.Path, path, StringComparison.OrdinalIgnoreCase));
             if (existing != null) { existing.Group.Activate(existing); return; }
@@ -559,6 +626,8 @@ namespace TaskPad
             Item("New tab", "Ctrl+N", () => NewTab(g));
             Item("New window", "Ctrl+Shift+N", () => NewWindow());
             Item("Open…", "Ctrl+O", OpenDialog);
+            Item("Open Folder…", "Ctrl+Shift+O", () => { SetExplorerVisible(true); Explorer.PickFolder(); });
+            Item("Explorer sidebar", "Ctrl+B", ToggleExplorer, ExplorerVisible);
             Item("Recently closed…", "Ctrl+Shift+T", () => Recent.ShowMenu(this, anchor));
             Item("Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
             Item("Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
@@ -693,6 +762,8 @@ namespace TaskPad
             else if (ctrlShift && key == Key.Oem5) SplitActive(g, Dock.Bottom);
             else if (ctrlShift && key == Key.M) MoveToNewWindow(ActiveTab);
             else if (ctrlShift && key == Key.T) Recent.ReopenLast(this);
+            else if (ctrl && key == Key.B) ToggleExplorer();
+            else if (ctrlShift && key == Key.O) { SetExplorerVisible(true); Explorer.PickFolder(); }
             else if (ctrl && (key == Key.OemPlus || key == Key.Add)) Workspace.Zoom(+1);
             else if (ctrl && (key == Key.OemMinus || key == Key.Subtract)) Workspace.Zoom(-1);
             else if (ctrl && (key == Key.D0 || key == Key.NumPad0)) Workspace.Zoom(0);
