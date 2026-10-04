@@ -197,6 +197,11 @@ Type these at the start of a line:
 **Double-click** it to show the raw code (`[ ]`, `!`, `TODO:` …) and edit it directly — e.g. type `x` to turn `[ ]` into `[x]`.
 Heading `#` marks stay hidden except on the line you're editing.
 
+**Deadlines:** add `due:2026-10-10`, `due:2026-10-10 18:00` or `due:18:00` to any line — it shows as a live countdown
+pill (`⏰ Fri 10 Oct 18:00 · in 3d 4h`): green under a week, amber under a day, red when overdue, grey once the task is ticked.
+Type `due:+2h`, `+3d`, `+1w`, `+1mo`, `tomorrow` or `friday` and press space — it turns into the date. A toast reminds you
+when a deadline arrives, and the status bar counts overdue tasks.
+
 Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl</kbd>+click) are coloured too.
 
 ## Keys

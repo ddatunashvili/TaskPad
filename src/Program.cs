@@ -131,6 +131,7 @@ namespace TaskPad
                 win.Show();
             }
             if (!standalone) StartPipeServer();
+            Due.Start();
             if (!Workspace.Settings.WelcomeSeen || Workspace.Settings.ShowWelcome)
             {
                 win.ShowWelcome();

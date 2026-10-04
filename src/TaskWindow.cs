@@ -79,7 +79,7 @@ namespace TaskPad
         /// The interactive tour, as an untitled note (only saved if the user wants to).
         public void OpenTour()
         {
-            var t = NewTab(null, WelcomePage.TourText);
+            var t = NewTab(null, Due.ExpandText(WelcomePage.TourText));
             t.Doc.UntitledName = "Tour";
             t.Doc.Dirty = false;
             t.Doc.Raise();
@@ -850,6 +850,9 @@ namespace TaskPad
             _progressFill.Width = total > 0 ? 70.0 * done / total : 0;
             _stTasks.Text = total > 0 ? $"{done}/{total} done" + (done == total ? "  ✓" : "") : "";
             _stTasks.Foreground = total > 0 && done == total ? Theme.Slash : Theme.FgDim;
+            int overdue = t == null ? 0 : Due.Scan(t.Doc.Document).Count(i => !i.Done && i.When < DateTime.Now);
+            if (overdue > 0)
+                _stTasks.Inlines.Add(new System.Windows.Documents.Run((total > 0 ? "   ·   " : "") + $"⏰ {overdue} overdue") { Foreground = Theme.Bang });
         }
 
         // ---------------- keys / lifetime ----------------
@@ -987,7 +990,8 @@ Inline  @person  #tag  2026-10-04 14:30  `code`  https://example.com (Ctrl+click
 14. Ctrl+M          comment on selected words (hover to read, click bubble to edit)
 15. Ctrl+V          paste an image (saved to images/ next to the file)
 16. Ctrl+P          export to PDF
-17. Ctrl+click      copy a colour code like #22C55E or a link
+17. due:+3d         deadline with live countdown (also due:2026-10-10 18:00, due:friday, due:+2h, due:+1w, due:+1mo)
+18. Ctrl+click      copy a colour code like #22C55E or a link
 
 # Heading 1
 ## Heading 2

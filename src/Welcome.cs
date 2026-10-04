@@ -214,24 +214,29 @@ Type [] at the start of a new line and press Enter twice to see lists continue.
 TODO: book flights
 Right-click or double-click any of these icons to change them.
 
-## 3. Notes & sections
+## 3. Deadlines
+[ ] Send the report due:+2h
+[ ] Renew passport due:+3w
+Type due: then +2h, +3d, +1w, +1mo, tomorrow or friday and press space — it becomes a live countdown.
+
+## 4. Notes & sections
 Shopping:
 - milk
 - coffee
 Colours get a swatch: #22C55E  · links copy with Ctrl+click: https://github.com/ddatunashvili/TaskPad
 ---
 
-## 4. Code
+## 5. Code
 ```python
 def hello(name):
     return f""Hello, {name}!""  # real syntax colours
 ```
 
-## 5. Comments
+## 6. Comments
 Select some words below and press Ctrl+M to comment on them:
 The {==launch date==}{>>@taskpad: comments live in the panel on the right — reply there<<} is next Friday.
 
-## 6. Images
+## 7. Images
 Paste a screenshot with Ctrl+V — it is stored inside a .task file, click it to zoom, crop or flip through.
 
 That's it. Ctrl+K lists every keyword, F1 opens the cheat sheet. Enjoy!

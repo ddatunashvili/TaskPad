@@ -234,6 +234,7 @@ namespace TaskPad
                 lastCaretLine = now;
             };
             ta.TextView.ElementGenerators.Add(new ImageGenerator(doc));
+            ta.TextView.ElementGenerators.Add(new DueGenerator(() => ta.Caret.Line));
             ta.TextView.LineTransformers.Add(new Code.FenceColorizer());
             SmartEditing.Attach(ed);
             SelectionToolbar.Attach(ed);

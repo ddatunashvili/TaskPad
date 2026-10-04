@@ -47,6 +47,7 @@ namespace TaskPad
             new Kw("@", "@name", "Person", Theme.Mention, Mode.Inline),
             new Kw("#", "#tag", "Tag", Theme.HashTag, Mode.Inline),
             new Kw("📅", "{date}", "Date  (Ctrl+;)", Theme.Date, Mode.Inline),
+            new Kw("⏰", "{due}", "Deadline with countdown — also due:+3d, due:friday", Theme.Todo, Mode.Inline),
             new Kw("`", "`code`", "Code", Theme.Code, Mode.Inline),
         };
 
@@ -169,7 +170,7 @@ namespace TaskPad
 
             var syntax = new TextBlock
             {
-                Text = kw.Syntax.Replace("{date}", "2026-10-04").TrimEnd(),
+                Text = kw.Syntax.Replace("{date}", "2026-10-04").Replace("{due}", "due:…").TrimEnd(),
                 Foreground = Theme.Fg,
                 FontFamily = new FontFamily("Cascadia Mono, Consolas"),
                 FontSize = 12.5,
@@ -226,7 +227,8 @@ namespace TaskPad
 
             if (kw.Mode == Mode.Inline)
             {
-                var s = kw.Syntax.Replace("{date}", DateTime.Now.ToString("yyyy-MM-dd"));
+                var s = kw.Syntax.Replace("{date}", DateTime.Now.ToString("yyyy-MM-dd"))
+                                 .Replace("{due}", "due:" + DateTime.Now.AddDays(1).ToString("yyyy-MM-dd") + " 18:00");
                 int caret = ed.CaretOffset;
                 bool needSpace = caret > line.Offset && !char.IsWhiteSpace(doc.GetCharAt(caret - 1));
                 ed.TextArea.Selection.ReplaceSelectionWithText((needSpace ? " " : "") + s);

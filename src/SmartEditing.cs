@@ -20,6 +20,7 @@ namespace TaskPad
             ed.TextArea.TextEntered += (s, e) =>
             {
                 if (e.Text == "]" && !Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line)) ExpandEmptyBox(ed);
+                if ((e.Text == " " || e.Text == ")") && !Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line)) Due.ExpandBeforeCaret(ed);
             };
         }
 
@@ -30,6 +31,7 @@ namespace TaskPad
             bool handled = true;
 
             bool code = Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line);
+            if (key == Key.Enter && !code) Due.ExpandBeforeCaret(ed);
             if (key == Key.Enter && mods == ModifierKeys.None && CloseFence(ed)) handled = true;
             else if (code && (key == Key.Enter || key == Key.Tab)) handled = false;   // plain editor behaviour inside code
             else if (key == Key.Enter && mods == ModifierKeys.None) handled = ContinueList(ed);
