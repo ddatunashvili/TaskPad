@@ -81,7 +81,7 @@ Every thread becomes a card aligned with its line. Reply in place (Enter to send
 ## Folders (VS Code-style explorer)
 
 Open a whole project folder: `⋯` → **Open Folder…** (Ctrl+Shift+O), right-click any folder in Windows →
-**Open folder in TaskPad**, or `TaskPad.exe C:\path	oolder`. The left sidebar (Ctrl+B, or the folder icon
+**Open folder in TaskPad**, or `TaskPad.exe C:\path\to\folder`. The left sidebar (Ctrl+B, or the folder icon
 in the status bar) shows files and folders with type icons (`.task`, `.txt`, Markdown, images, PDF, JS/TS/C#/JSON…)
 and updates as files change on disk. Click a file to open it (images open in the viewer, PDFs and other binaries in
 their default app). Right-click for **New File** (no extension = `.task`), **New Folder**, **Rename** (F2),
