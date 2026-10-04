@@ -1,0 +1,24 @@
+# Week plan  2026-10-04
+
+Work:
+[ ] Finish landing page @anna #web
+[x] Fix login bug
+[/] Write API docs `GET /tasks`
+[-] Old migration idea
+- [ ] markdown style task
+  [ ] nested subtask 14:30
+
+---
+! Server cert expires Friday
+? Maybe switch to Postgres
+* Big priority this week
+> Send invoice to client
+< Waiting on design review
+/ Deployed v1.2
+- plain bullet
+TODO: book flights
+// ! better comments style
+1. first
+2. second
+===
+https://example.com

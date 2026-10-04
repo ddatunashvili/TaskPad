@@ -1,0 +1,626 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Microsoft.Win32;
+
+namespace TaskPad
+{
+    public sealed class TaskWindow : Window
+    {
+        readonly Border _root = new Border { Background = Theme.Bg };
+        readonly Canvas _overlay = new Canvas { IsHitTestVisible = false };
+        readonly Border _dropRect = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x30, 0x7C, 0x6C, 0xF6)),
+            BorderBrush = Theme.Accent,
+            BorderThickness = new Thickness(1.5),
+            CornerRadius = new CornerRadius(6),
+            Visibility = Visibility.Collapsed,
+        };
+        readonly TextBlock _stPos = StatusText(), _stTasks = StatusText(), _stInfo = StatusText();
+        readonly Border _progressTrack = new Border { Width = 70, Height = 4, CornerRadius = new CornerRadius(2), Background = Theme.FgFaint, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
+        readonly Border _progressFill = new Border { Height = 4, CornerRadius = new CornerRadius(2), Background = Theme.Accent, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
+        readonly DispatcherTimer _statsTimer;
+
+        public EditorGroup ActiveGroup { get; private set; }
+        public TabView ActiveTab => ActiveGroup?.Active;
+        public int TabCount => Groups.Sum(g => g.Tabs.Count);
+
+        public TaskWindow(bool restoreBounds = true)
+        {
+            var st = Workspace.Settings;
+            Title = "TaskPad";
+            Background = Theme.Chrome;
+            Width = st.Width;
+            Height = st.Height;
+            MinWidth = 360;
+            MinHeight = 240;
+            if (restoreBounds && !double.IsNaN(st.Left) && !double.IsNaN(st.Top) && OnScreen(st.Left, st.Top))
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual;
+                Left = st.Left;
+                Top = st.Top;
+                if (st.Maximized) WindowState = WindowState.Maximized;
+            }
+            else if (restoreBounds) WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            else WindowStartupLocation = WindowStartupLocation.Manual;
+            UseLayoutRounding = true;
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+            AllowDrop = true;
+            try { Icon = BitmapFrame.Create(new Uri("pack://application:,,,/TaskPad;component/assets/taskpad.ico")); } catch { }
+
+            _progressTrack.Child = _progressFill;
+            _statsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            _statsTimer.Tick += (s, e) => { _statsTimer.Stop(); UpdateStats(); };
+
+            var first = new EditorGroup(this);
+            _root.Child = first;
+            ActiveGroup = first;
+            _overlay.Children.Add(_dropRect);
+            Content = BuildLayout();
+
+            PreviewKeyDown += OnWindowKey;
+            PreviewDragOver += (s, e) =>
+            {
+                if (e.Data.GetDataPresent(DataFormats.FileDrop)) { e.Effects = DragDropEffects.Copy; e.Handled = true; }
+            };
+            PreviewDrop += (s, e) =>
+            {
+                if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
+                {
+                    foreach (var f in files.Where(File.Exists)) OpenFile(f);
+                    e.Handled = true;
+                }
+            };
+            Activated += (s, e) => { Workspace.LastActive = this; Workspace.ReloadChangedFiles(); };
+            SourceInitialized += (s, e) => DarkTitleBar();
+            Closing += OnClosing;
+            Closed += (s, e) =>
+            {
+                Workspace.Windows.Remove(this);
+                if (Workspace.LastActive == this) Workspace.LastActive = Workspace.Windows.LastOrDefault();
+            };
+            Workspace.Windows.Add(this);
+            Workspace.LastActive = this;
+        }
+
+        UIElement BuildLayout()
+        {
+            var root = new DockPanel();
+            var status = new DockPanel { Height = 24, Background = Theme.Chrome, LastChildFill = false };
+            _stPos.Margin = new Thickness(12, 0, 16, 0);
+            DockPanel.SetDock(_stPos, Dock.Left);
+            status.Children.Add(_stPos);
+            var tasks = new StackPanel { Orientation = Orientation.Horizontal };
+            tasks.Children.Add(_progressTrack);
+            tasks.Children.Add(_stTasks);
+            DockPanel.SetDock(tasks, Dock.Left);
+            status.Children.Add(tasks);
+            _stInfo.Margin = new Thickness(0, 0, 12, 0);
+            DockPanel.SetDock(_stInfo, Dock.Right);
+            status.Children.Add(_stInfo);
+            var statusBorder = new Border { Child = status, BorderBrush = Theme.ChromeBorder, BorderThickness = new Thickness(0, 1, 0, 0) };
+            DockPanel.SetDock(statusBorder, Dock.Bottom);
+            root.Children.Add(statusBorder);
+
+            var layer = new Grid();
+            layer.Children.Add(_root);
+            layer.Children.Add(_overlay);
+            root.Children.Add(layer);
+            return root;
+        }
+
+        static TextBlock StatusText() => new TextBlock
+        {
+            Foreground = Theme.FgDim,
+            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        // ---------------- groups / split layout ----------------
+
+        public IEnumerable<EditorGroup> Groups
+        {
+            get
+            {
+                var list = new List<EditorGroup>();
+                void Walk(UIElement e)
+                {
+                    if (e is EditorGroup g) list.Add(g);
+                    else if (e is Grid grid) foreach (UIElement c in grid.Children) Walk(c);
+                }
+                Walk(_root.Child);
+                return list;
+            }
+        }
+
+        public void SetActiveGroup(EditorGroup g)
+        {
+            if (ActiveGroup == g || g == null) return;
+            var old = ActiveGroup;
+            ActiveGroup = g;
+            old?.RefreshHeaders();
+            g.RefreshHeaders();
+            UpdateStatus();
+            UpdateStats();
+        }
+
+        /// Splits `target` and returns the new empty group placed on `side`.
+        public EditorGroup Split(EditorGroup target, Dock side)
+        {
+            var group = new EditorGroup(this);
+            bool horizontal = side == Dock.Left || side == Dock.Right;
+            bool newFirst = side == Dock.Left || side == Dock.Top;
+
+            var grid = new Grid();
+            var splitter = new GridSplitter
+            {
+                Background = Theme.ChromeBorder,
+                ResizeBehavior = GridResizeBehavior.PreviousAndNext,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Focusable = false,
+            };
+            if (horizontal)
+            {
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+                splitter.Cursor = Cursors.SizeWE;
+                Grid.SetColumn(splitter, 1);
+            }
+            else
+            {
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 80 });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 80 });
+                splitter.Cursor = Cursors.SizeNS;
+                Grid.SetRow(splitter, 1);
+            }
+
+            Replace(target, grid);
+            var a = newFirst ? group : target;
+            var b = newFirst ? target : group;
+            Place(a, horizontal, 0);
+            Place(b, horizontal, 2);
+            grid.Children.Add(a);
+            grid.Children.Add(splitter);
+            grid.Children.Add(b);
+            return group;
+        }
+
+        static void Place(UIElement e, bool horizontal, int index)
+        {
+            Grid.SetColumn(e, horizontal ? index : 0);
+            Grid.SetRow(e, horizontal ? 0 : index);
+        }
+
+        /// Puts `neu` where `old` is in the layout tree.
+        void Replace(FrameworkElement old, FrameworkElement neu)
+        {
+            var parent = old.Parent;
+            if (parent == _root) { _root.Child = neu; return; }
+            if (parent is Grid g)
+            {
+                int col = Grid.GetColumn(old), row = Grid.GetRow(old);
+                g.Children.Remove(old);
+                Grid.SetColumn(neu, col);
+                Grid.SetRow(neu, row);
+                g.Children.Add(neu);
+            }
+        }
+
+        /// Called when a group has no tabs left: collapse its split, or close the window.
+        public void RemoveGroup(EditorGroup g)
+        {
+            if (g.Parent == _root)
+            {
+                _root.Child = null;
+                Dispatcher.BeginInvoke(new Action(Close));
+                return;
+            }
+            if (g.Parent is Grid grid)
+            {
+                var sibling = grid.Children.OfType<FrameworkElement>().First(c => c != g && !(c is GridSplitter));
+                grid.Children.Clear();
+                Replace(grid, sibling);
+            }
+            if (ActiveGroup == g)
+            {
+                ActiveGroup = null;
+                var next = Groups.FirstOrDefault();
+                if (next != null) { SetActiveGroup(next); next.Active?.Editor.TextArea.Focus(); }
+            }
+        }
+
+        public void SplitActive(EditorGroup g, Dock side)
+        {
+            var tab = g?.Active;
+            if (tab == null) return;
+            var ng = Split(g, side);
+            ng.Insert(new TabView(tab.Doc), 0);
+        }
+
+        // ---------------- tabs ----------------
+
+        public TabView NewTab(EditorGroup g = null, string text = "")
+        {
+            g = g ?? ActiveGroup ?? Groups.First();
+            var t = new TabView(new Doc(text, null));
+            g.Insert(t, g.Tabs.Count);
+            return t;
+        }
+
+        public void OpenFile(string path)
+        {
+            path = Path.GetFullPath(path);
+            var g = ActiveGroup ?? Groups.First();
+            var existing = Groups.SelectMany(x => x.Tabs).FirstOrDefault(t => t.Doc.Path != null && string.Equals(t.Doc.Path, path, StringComparison.OrdinalIgnoreCase));
+            if (existing != null) { existing.Group.Activate(existing); return; }
+
+            Doc doc = Workspace.FindByPath(path);
+            if (doc == null)
+            {
+                try { doc = Doc.Open(path); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, $"Cannot open {path}\n\n{ex.Message}", "TaskPad", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            // Replace a pristine empty untitled tab instead of stacking next to it.
+            var blank = g.Tabs.Count == 1 && g.Tabs[0].Doc.Path == null && !g.Tabs[0].Doc.Dirty && g.Tabs[0].Doc.Document.TextLength == 0 ? g.Tabs[0] : null;
+            g.Insert(new TabView(doc), g.Tabs.Count);
+            if (blank != null) { g.Remove(blank); blank.Detach(); }
+        }
+
+        public void ReceiveFromOtherInstance(string[] paths)
+        {
+            if (paths.Length == 0) NewTab();
+            foreach (var p in paths) OpenFile(p);
+            if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+            Activate();
+            Topmost = true;
+            Topmost = false;
+            Focus();
+        }
+
+        public void CloseTab(TabView t)
+        {
+            if (t?.Group == null) return;
+            if (t.Doc.Views.Count == 1)
+            {
+                t.Group.Activate(t, focus: false);
+                if (!t.Doc.ConfirmClose(this)) return;
+            }
+            var g = t.Group;
+            g.Remove(t);
+            t.Detach();
+            if (g.Tabs.Count == 0) RemoveGroup(g);
+        }
+
+        /// Moves a tab into `target` at `index` (any window). Empty source groups collapse.
+        public static void MoveTab(TabView t, EditorGroup target, int index)
+        {
+            var src = t.Group;
+            if (src == target)
+            {
+                int cur = src.Tabs.IndexOf(t);
+                if (index > cur) index--;
+                src.Strip.Children.Remove(t.Header);
+                src.Tabs.Remove(t);
+                src.Insert(t, index);
+                return;
+            }
+            src.Remove(t);
+            target.Insert(t, index);
+            target.Owner.SetActiveGroup(target);
+            if (src.Tabs.Count == 0) src.Owner.RemoveGroup(src);
+            if (target.Owner != src.Owner) target.Owner.Activate();
+        }
+
+        void CycleTab(int dir)
+        {
+            var g = ActiveGroup;
+            if (g == null || g.Tabs.Count < 2) return;
+            int i = (g.Tabs.IndexOf(g.Active) + dir + g.Tabs.Count) % g.Tabs.Count;
+            g.Activate(g.Tabs[i]);
+        }
+
+        public void ShowCheatSheet()
+        {
+            var t = NewTab(null, CheatSheet);
+            t.Doc.UntitledName = "Cheat sheet";
+            t.Doc.Dirty = false;
+            t.Doc.Raise();
+            UpdateStats();
+        }
+
+        public void MoveToNewWindow(TabView t)
+        {
+            if (t == null) return;
+            var w = new TaskWindow(false) { Left = Left + 40, Top = Top + 40, Width = ActualWidth, Height = ActualHeight };
+            w.Show();
+            MoveTab(t, w.ActiveGroup, 0);
+        }
+
+        // ---------------- drag & drop overlay ----------------
+
+        public void ShowDropRect(Rect r)
+        {
+            if (_dropRect.Visibility != Visibility.Visible)
+            {
+                Canvas.SetLeft(_dropRect, r.X); Canvas.SetTop(_dropRect, r.Y);
+                _dropRect.Width = r.Width; _dropRect.Height = r.Height;
+                _dropRect.Opacity = 0;
+                _dropRect.Visibility = Visibility.Visible;
+            }
+            var d = new Duration(TimeSpan.FromMilliseconds(140));
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            _dropRect.BeginAnimation(Canvas.LeftProperty, new DoubleAnimation(r.X, d) { EasingFunction = ease });
+            _dropRect.BeginAnimation(Canvas.TopProperty, new DoubleAnimation(r.Y, d) { EasingFunction = ease });
+            _dropRect.BeginAnimation(WidthProperty, new DoubleAnimation(Math.Max(2, r.Width), d) { EasingFunction = ease });
+            _dropRect.BeginAnimation(HeightProperty, new DoubleAnimation(Math.Max(2, r.Height), d) { EasingFunction = ease });
+            _dropRect.BeginAnimation(OpacityProperty, new DoubleAnimation(1, d));
+        }
+
+        public void HideDropRect()
+        {
+            if (_dropRect.Visibility != Visibility.Visible) return;
+            _dropRect.BeginAnimation(Canvas.LeftProperty, null);
+            _dropRect.BeginAnimation(Canvas.TopProperty, null);
+            _dropRect.BeginAnimation(WidthProperty, null);
+            _dropRect.BeginAnimation(HeightProperty, null);
+            _dropRect.BeginAnimation(OpacityProperty, null);
+            _dropRect.Visibility = Visibility.Collapsed;
+        }
+
+        /// Bounds of an element in overlay coordinates.
+        public Rect BoundsOf(FrameworkElement e) =>
+            e.TransformToVisual(_overlay).TransformBounds(new Rect(0, 0, e.ActualWidth, e.ActualHeight));
+
+        public Point OverlayPointFromScreen(Point px) => _overlay.PointFromScreen(px);
+
+        // ---------------- menu ----------------
+
+        public void ShowMenu(FrameworkElement anchor, EditorGroup g)
+        {
+            SetActiveGroup(g);
+            var m = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+            MenuItem Item(string header, string gesture, Action a, bool? check = null)
+            {
+                var mi = new MenuItem { Header = header, InputGestureText = gesture ?? "" };
+                if (check.HasValue) { mi.IsCheckable = true; mi.IsChecked = check.Value; }
+                mi.Click += (s, e) => a();
+                m.Items.Add(mi);
+                return mi;
+            }
+            var tab = g.Active;
+            Item("New tab", "Ctrl+N", () => NewTab(g));
+            Item("New window", "Ctrl+Shift+N", () => NewWindow());
+            Item("Open…", "Ctrl+O", OpenDialog);
+            Item("Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
+            Item("Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
+            Item("Close tab", "Ctrl+W", () => CloseTab(tab));
+            m.Items.Add(new Separator());
+            Item("Split right", "Ctrl+\\", () => SplitActive(g, Dock.Right));
+            Item("Split down", "Ctrl+Shift+\\", () => SplitActive(g, Dock.Bottom));
+            Item("Move tab to new window", "Ctrl+Shift+M", () => MoveToNewWindow(tab));
+            m.Items.Add(new Separator());
+            Item("Word wrap", "Alt+Z", Workspace.ToggleWrap, Workspace.Settings.WordWrap);
+            Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
+            Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
+            Item("Reset zoom", "Ctrl+0", () => Workspace.Zoom(0));
+            m.Items.Add(new Separator());
+            if (Shell.IsRegistered) Item("Remove from Explorer right-click menu", null, () => Shell.Unregister(true));
+            else Item("Add to Explorer right-click menu", null, () => Shell.Register(true));
+            Item("Reveal file in Explorer", null, () => Process.Start("explorer.exe", $"/select,\"{tab.Doc.Path}\"")).IsEnabled = tab?.Doc.Path != null;
+            m.Items.Add(new Separator());
+            Item("Keywords", "Ctrl+K", () => KeywordsPopup.Show(anchor, () => g.Active?.Editor, ShowCheatSheet));
+            Item("Syntax cheat sheet", "F1", ShowCheatSheet);
+            m.IsOpen = true;
+        }
+
+        void NewWindow()
+        {
+            var w = new TaskWindow(false) { Left = Left + 40, Top = Top + 40, Width = ActualWidth, Height = ActualHeight };
+            w.NewTab();
+            w.Show();
+        }
+
+        void OpenDialog()
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Text files (*.txt;*.md;*.todo;*.log)|*.txt;*.md;*.todo;*.log|All files (*.*)|*.*",
+                Multiselect = true,
+            };
+            if (ActiveTab?.Doc.Path != null) dlg.InitialDirectory = Path.GetDirectoryName(ActiveTab.Doc.Path);
+            if (dlg.ShowDialog(this) == true)
+                foreach (var f in dlg.FileNames) OpenFile(f);
+        }
+
+        // ---------------- status ----------------
+
+        public void UpdateTitle()
+        {
+            var t = ActiveTab;
+            Title = t == null ? "TaskPad" : (t.Doc.Dirty ? "● " : "") + t.Doc.Name + " — TaskPad";
+        }
+
+        public void ScheduleStats()
+        {
+            _statsTimer.Stop();
+            _statsTimer.Start();
+        }
+
+        public void UpdateStatus()
+        {
+            UpdateTitle();
+            var t = ActiveTab;
+            if (t == null) { _stPos.Text = _stInfo.Text = ""; return; }
+            var c = t.Editor.TextArea.Caret;
+            var sel = t.Editor.SelectionLength;
+            _stPos.Text = $"Ln {c.Line}, Col {c.Column}" + (sel > 0 ? $"  ({sel} selected)" : "");
+            var doc = t.Doc.Document;
+            string eol = doc.LineCount > 1 ? (doc.GetLineByNumber(1).DelimiterLength == 2 ? "CRLF" : "LF") : "CRLF";
+            string enc = t.Doc.Encoding is UTF8Encoding u ? (u.GetPreamble().Length > 0 ? "UTF-8 BOM" : "UTF-8") : t.Doc.Encoding.WebName.ToUpperInvariant();
+            _stInfo.Text = $"{enc}    {eol}    {Math.Round(Workspace.Settings.FontSize / 16 * 100)}%";
+        }
+
+        public void UpdateStats()
+        {
+            var t = ActiveTab;
+            int total = 0, done = 0;
+            if (t != null)
+            {
+                var doc = t.Doc.Document;
+                foreach (var line in doc.Lines)
+                {
+                    if (line.Length < 3) continue;
+                    var info = LineParser.Parse(doc.GetText(line));
+                    if (info.Check == Check.None || info.Check == Check.Cancelled) continue;
+                    total++;
+                    if (info.Check == Check.Done) done++;
+                }
+            }
+            _progressTrack.Visibility = total > 0 ? Visibility.Visible : Visibility.Collapsed;
+            _progressFill.Width = total > 0 ? 70.0 * done / total : 0;
+            _stTasks.Text = total > 0 ? $"{done}/{total} done" + (done == total ? "  ✓" : "") : "";
+            _stTasks.Foreground = total > 0 && done == total ? Theme.Slash : Theme.FgDim;
+        }
+
+        // ---------------- keys / lifetime ----------------
+
+        void OnWindowKey(object sender, KeyEventArgs e)
+        {
+            var mods = Keyboard.Modifiers;
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            bool ctrl = mods == ModifierKeys.Control, ctrlShift = mods == (ModifierKeys.Control | ModifierKeys.Shift);
+            var g = ActiveGroup;
+            bool handled = true;
+            if (ctrl && key == Key.N) NewTab();
+            else if (ctrlShift && key == Key.N) NewWindow();
+            else if (ctrl && key == Key.O) OpenDialog();
+            else if (ctrl && key == Key.S) ActiveTab?.Doc.Save(this, false);
+            else if (ctrlShift && key == Key.S) ActiveTab?.Doc.Save(this, true);
+            else if (ctrl && (key == Key.W || key == Key.F4)) CloseTab(ActiveTab);
+            else if (ctrl && (key == Key.Tab || key == Key.PageDown)) CycleTab(+1);
+            else if (ctrlShift && key == Key.Tab || ctrl && key == Key.PageUp) CycleTab(-1);
+            else if (ctrl && key == Key.Oem5) SplitActive(g, Dock.Right);
+            else if (ctrlShift && key == Key.Oem5) SplitActive(g, Dock.Bottom);
+            else if (ctrlShift && key == Key.M) MoveToNewWindow(ActiveTab);
+            else if (ctrl && (key == Key.OemPlus || key == Key.Add)) Workspace.Zoom(+1);
+            else if (ctrl && (key == Key.OemMinus || key == Key.Subtract)) Workspace.Zoom(-1);
+            else if (ctrl && (key == Key.D0 || key == Key.NumPad0)) Workspace.Zoom(0);
+            else if (mods == ModifierKeys.Alt && key == Key.Z) Workspace.ToggleWrap();
+            else if (mods == ModifierKeys.None && key == Key.F1) ShowCheatSheet();
+            else if (ctrl && key == Key.K && g != null) KeywordsPopup.Show(g.Bar, () => g.Active?.Editor, ShowCheatSheet);
+            else if (ctrl && key >= Key.D1 && key <= Key.D9 && g != null && key - Key.D1 < g.Tabs.Count) g.Activate(g.Tabs[key - Key.D1]);
+            else handled = false;
+            if (handled) e.Handled = true;
+        }
+
+        void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var tabs = Groups.SelectMany(g => g.Tabs).ToList();
+            foreach (var t in tabs)
+            {
+                if (t.Doc.Views.All(v => v.Group?.Owner == this) && !t.Doc.ConfirmClose(this)) { e.Cancel = true; return; }
+            }
+            foreach (var t in tabs) t.Detach();
+
+            var st = Workspace.Settings;
+            st.Maximized = WindowState == WindowState.Maximized;
+            var rb = RestoreBounds;
+            if (!rb.IsEmpty)
+            {
+                st.Left = rb.Left; st.Top = rb.Top;
+                st.Width = rb.Width; st.Height = rb.Height;
+            }
+            st.Save();
+        }
+
+        static bool OnScreen(double left, double top) =>
+            left >= SystemParameters.VirtualScreenLeft - 50 && top >= SystemParameters.VirtualScreenTop - 50 &&
+            left < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 100 &&
+            top < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 100;
+
+        [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+        void DarkTitleBar()
+        {
+            try
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                int on = 1;
+                DwmSetWindowAttribute(hwnd, 20, ref on, 4);          // immersive dark mode
+                var c = Theme.Chrome.Color;
+                int bgr = c.R | (c.G << 8) | (c.B << 16);
+                DwmSetWindowAttribute(hwnd, 35, ref bgr, 4);         // caption color (Win11)
+                var b = Theme.ChromeBorder.Color;
+                int border = b.R | (b.G << 8) | (b.B << 16);
+                DwmSetWindowAttribute(hwnd, 34, ref border, 4);      // border color (Win11)
+            }
+            catch { }
+        }
+
+        const string CheatSheet =
+@"# TaskPad cheat sheet
+Type these at the start of a line:
+
+[ ] open task  (type [] for one, click the box to toggle)
+[x] done task
+[/] in progress  (Ctrl+click a box)
+[-] cancelled  (Shift+click a box)
+- [ ] markdown style task works too
+
+- bullet
+* starred / important
+> next up / forwarded
+< waiting on someone
+! urgent / warning
+? question / idea
+/ finished note
+TODO: something to do
+// ! better-comments style prefix works too
+
+## Heading 2
+### Heading 3
+Section name:
+---
+===
+
+Inline  @person  #tag  2026-10-04 14:30  `code`  https://example.com (Ctrl+click)
+
+## Keys
+1. Enter            continue task / bullet / numbered list
+2. Enter twice      end the list
+3. Ctrl+Enter       toggle task on line(s), or make the line a task
+4. Tab / Shift+Tab  indent / outdent list item
+5. Alt+Up/Down      move line
+6. Shift+Alt+Down   duplicate line
+7. Ctrl+Shift+K     delete line
+8. Ctrl+F / Ctrl+H  find / replace
+9. F5 / Ctrl+;      insert date-time / date
+10. Ctrl+K          keywords picker
+11. Ctrl+\          split right (drag a tab to an edge to split)
+12. Ctrl+Shift+M    move tab to new window (or drag it out)
+13. Ctrl+wheel      zoom
+";
+    }
+}
