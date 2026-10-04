@@ -655,65 +655,115 @@ namespace TaskPad
         {
             SetActiveGroup(g);
             var m = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-            MenuItem Item(string header, string gesture, Action a, bool? check = null)
+            var tab = g.Active;
+            var st = Workspace.Settings;
+
+            MenuItem Item(ItemsControl parent, string header, string gesture, Action a, bool? check = null)
             {
                 var mi = new MenuItem { Header = header, InputGestureText = gesture ?? "" };
                 if (check.HasValue) { mi.IsCheckable = true; mi.IsChecked = check.Value; }
-                mi.Click += (s, e) => a();
+                mi.Click += (s, e) => { e.Handled = true; a(); };
+                parent.Items.Add(mi);
+                return mi;
+            }
+            MenuItem Sub(string header)
+            {
+                var mi = new MenuItem { Header = header };
                 m.Items.Add(mi);
                 return mi;
             }
-            var tab = g.Active;
-            Item("New tab", "Ctrl+N", () => NewTab(g));
-            Item("New window", "Ctrl+Shift+N", () => NewWindow());
-            Item("Open…", "Ctrl+O", OpenDialog);
-            Item("Open Folder…", "Ctrl+Shift+O", () => { SetExplorerVisible(true); Explorer.PickFolder(); });
-            Item("Close Folder", null, Explorer.CloseFolder).IsEnabled = Explorer.Root != null;
-            Item("Explorer sidebar", "Ctrl+B", ToggleExplorer, ExplorerVisible);
-            Item("Recently closed…", "Ctrl+Shift+T", () => Recent.ShowMenu(this, anchor));
-            Item("Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
-            Item("Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
-            Item("Close tab", "Ctrl+W", () => CloseTab(tab));
-            Item("Export to PDF…", "Ctrl+P", () => PdfExport.Run(this, tab?.Doc)).IsEnabled = tab != null;
-            Item("Export as Markdown…", ".md", () => MarkdownIO.ExportMarkdown(this, tab?.Doc)).IsEnabled = tab != null;
-            Item("Export as plain text…", ".txt", () => MarkdownIO.ExportText(this, tab?.Doc)).IsEnabled = tab != null;
-            Item("Export as .task (with images)…", ".task", () => TaskFile.ExportCopy(this, tab?.Doc)).IsEnabled = tab != null;
-            Item("Import Markdown…", ".md", () => MarkdownIO.Import(this));
-            m.Items.Add(new Separator());
-            Item("Split right", "Ctrl+\\", () => SplitActive(g, Dock.Right));
-            Item("Split down", "Ctrl+Shift+\\", () => SplitActive(g, Dock.Bottom));
-            Item("Move tab to new window", "Ctrl+Shift+M", () => MoveToNewWindow(tab));
-            m.Items.Add(new Separator());
-            Item("Auto save", null, () =>
+
+            // ---- file
+            Item(m, "New tab", "Ctrl+N", () => NewTab(g));
+            Item(m, "New window", "Ctrl+Shift+N", () => NewWindow());
+            Item(m, "Open…", "Ctrl+O", OpenDialog);
+            Item(m, "Open Folder…", "Ctrl+Shift+O", () => { SetExplorerVisible(true); Explorer.PickFolder(); });
+            var recent = Sub("Recently closed");
+            var closed = Recent.List();
+            if (closed.Count == 0) recent.Items.Add(new MenuItem { Header = "Nothing closed yet", IsEnabled = false });
+            foreach (var p in closed.Take(12))
             {
-                Workspace.Settings.AutoSave = !Workspace.Settings.AutoSave;
-                Workspace.Settings.Save();
-                if (Workspace.Settings.AutoSave) foreach (var d in Workspace.Docs.Where(d => d.Dirty && d.Path != null).ToList()) d.Save(this, false);
-                Toast(Workspace.Settings.AutoSave ? "Auto save on" : "Auto save off — Ctrl+S to save");
-            }, Workspace.Settings.AutoSave);
-            Item("Light theme", null, () => Theme.Switch(!Theme.IsLight), Theme.IsLight);
-            Item("Code highlight theme…", Code.Current.Name, () => ShowCodeThemes(anchor));
-            Item("Word wrap", "Alt+Z", Workspace.ToggleWrap, Workspace.Settings.WordWrap);
-            Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
-            Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
-            Item("Reset zoom", "Ctrl+0", () => Workspace.Zoom(0));
-            Item("Comments panel", null, () => Workspace.SetCommentPanel(!Comments.MarginMode), Comments.MarginMode);
-            m.Items.Add(new Separator());
-            if (Shell.IsRegistered) Item("Remove from Explorer right-click menu", null, () => Shell.Unregister(true));
-            else Item("Add to Explorer right-click menu", null, () => Shell.Register(true));
-            Item("Reveal file in Explorer", null, () => Process.Start("explorer.exe", $"/select,\"{tab.Doc.Path}\"")).IsEnabled = tab?.Doc.Path != null;
-            m.Items.Add(new Separator());
-            Item("Keywords", "Ctrl+K", () => KeywordsPopup.Show(anchor, () => g.Active?.Editor, ShowCheatSheet));
-            Item("Syntax cheat sheet", "F1", ShowCheatSheet);
-            Item("Welcome", null, ShowWelcome);
-            Item("Take the tour", null, OpenTour);
-            m.Items.Add(new Separator());
-            Item($"Check for updates  (v{Updater.Short(Updater.Current)})", null, () => Updater.Check(silent: false));
-            Item("Auto-install updates", null, () =>
+                var path = p;
+                Item(recent, System.IO.Path.GetFileName(p), null, () => OpenFile(path)).ToolTip = p;
+            }
+            if (closed.Count > 0)
             {
-                Workspace.Settings.AutoUpdate = Workspace.Settings.AutoUpdate == "auto" ? "ask" : "auto";
-                Workspace.Settings.Save();
-            }, Workspace.Settings.AutoUpdate == "auto");
+                recent.Items.Add(new Separator());
+                Item(recent, "Reopen last", "Ctrl+Shift+T", () => Recent.ReopenLast(this));
+            }
+            Item(m, "Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
+            Item(m, "Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
+            var io = Sub("Import / Export");
+            Item(io, "Export to PDF…", "Ctrl+P", () => PdfExport.Run(this, tab?.Doc)).IsEnabled = tab != null;
+            Item(io, "Export as .task (with images)…", null, () => TaskFile.ExportCopy(this, tab?.Doc)).IsEnabled = tab != null;
+            Item(io, "Export as Markdown…", null, () => MarkdownIO.ExportMarkdown(this, tab?.Doc)).IsEnabled = tab != null;
+            Item(io, "Export as plain text…", null, () => MarkdownIO.ExportText(this, tab?.Doc)).IsEnabled = tab != null;
+            io.Items.Add(new Separator());
+            Item(io, "Import Markdown…", null, () => MarkdownIO.Import(this));
+            Item(m, "Close tab", "Ctrl+W", () => CloseTab(tab));
+            m.Items.Add(new Separator());
+
+            // ---- view
+            var view = Sub("View");
+            Item(view, "File explorer", "Ctrl+B", ToggleExplorer, ExplorerVisible);
+            Item(view, "Comments panel", null, () => Workspace.SetCommentPanel(!Comments.MarginMode), Comments.MarginMode);
+            Item(view, "Word wrap", "Alt+Z", Workspace.ToggleWrap, st.WordWrap);
+            view.Items.Add(new Separator());
+            Item(view, "Split right", "Ctrl+\\", () => SplitActive(g, Dock.Right));
+            Item(view, "Split down", "Ctrl+Shift+\\", () => SplitActive(g, Dock.Bottom));
+            Item(view, "Move tab to new window", "Ctrl+Shift+M", () => MoveToNewWindow(tab));
+            view.Items.Add(new Separator());
+            Item(view, "Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
+            Item(view, "Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
+            Item(view, "Reset zoom", "Ctrl+0", () => Workspace.Zoom(0));
+            if (Explorer.Root != null) { view.Items.Add(new Separator()); Item(view, "Close folder", null, Explorer.CloseFolder); }
+
+            // ---- appearance
+            var look = Sub("Appearance");
+            Item(look, "Dark theme", null, () => { if (Theme.IsLight) Theme.Switch(false); }, !Theme.IsLight);
+            Item(look, "Light theme", null, () => { if (!Theme.IsLight) Theme.Switch(true); }, Theme.IsLight);
+            look.Items.Add(new Separator());
+            var code = new MenuItem { Header = "Code colours", InputGestureText = Code.Current.Name };
+            look.Items.Add(code);
+            var currentCode = st.CodeTheme ?? "auto";
+            Item(code, "Auto (One Dark / GitHub Light)", null, () => Code.SetTheme("auto"), string.Equals(currentCode, "auto", StringComparison.OrdinalIgnoreCase));
+            code.Items.Add(new Separator());
+            foreach (var t in Code.Themes)
+            {
+                var name = t.Name;
+                Item(code, name + (t.Light ? "  (light)" : ""), null, () => Code.SetTheme(name), string.Equals(currentCode, name, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // ---- settings
+            var set = Sub("Settings");
+            Item(set, "Auto save", null, () =>
+            {
+                st.AutoSave = !st.AutoSave;
+                st.Save();
+                if (st.AutoSave) foreach (var d in Workspace.Docs.Where(d => d.Dirty && d.Path != null).ToList()) d.Save(this, false);
+                Toast(st.AutoSave ? "Auto save on" : "Auto save off — Ctrl+S to save");
+            }, st.AutoSave);
+            Item(set, "Install updates automatically", null, () => { st.AutoUpdate = st.AutoUpdate == "auto" ? "ask" : "auto"; st.Save(); }, st.AutoUpdate == "auto");
+            Item(set, "Explorer right-click menu", null, () => { if (Shell.IsRegistered) Shell.Unregister(true); else Shell.Register(true); }, Shell.IsRegistered);
+            Item(set, "Show welcome page at startup", null, () => { st.ShowWelcome = !st.ShowWelcome; st.Save(); }, st.ShowWelcome);
+            set.Items.Add(new Separator());
+            Item(set, "Open settings file…", null, () =>
+            {
+                st.Save();
+                OpenFile(System.IO.Path.Combine(st.Dir, "TaskPad.ini"));
+            });
+            Item(m, "Reveal file in Explorer", null, () => Process.Start("explorer.exe", $"/select,\"{tab.Doc.Path}\"")).IsEnabled = tab?.Doc.Path != null;
+            m.Items.Add(new Separator());
+
+            // ---- help
+            var help = Sub("Help");
+            Item(help, "Welcome", null, ShowWelcome);
+            Item(help, "Take the tour", null, OpenTour);
+            Item(help, "Keywords", "Ctrl+K", () => KeywordsPopup.Show(anchor, () => g.Active?.Editor, ShowCheatSheet));
+            Item(help, "Cheat sheet", "F1", ShowCheatSheet);
+            help.Items.Add(new Separator());
+            Item(help, "Check for updates", "v" + Updater.Short(Updater.Current), () => Updater.Check(silent: false));
+            Item(help, "TaskPad on GitHub", null, () => { try { Process.Start(new ProcessStartInfo("https://github.com/ddatunashvili/TaskPad") { UseShellExecute = true }); } catch { } });
             m.IsOpen = true;
         }
 

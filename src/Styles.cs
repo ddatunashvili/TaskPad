@@ -58,16 +58,26 @@ namespace TaskPad
   <Setter Property='Foreground' Value='{H(Theme.Fg)}'/>
   <Setter Property='Template'><Setter.Value>
     <ControlTemplate TargetType='MenuItem'>
-      <Border x:Name='Bd' Background='Transparent' Padding='12,6,14,6' CornerRadius='5'>
+      <Border x:Name='Bd' Background='Transparent' Padding='12,6,10,6' CornerRadius='5'>
         <Grid>
-          <Grid.ColumnDefinitions><ColumnDefinition Width='18'/><ColumnDefinition Width='*'/><ColumnDefinition Width='Auto'/></Grid.ColumnDefinitions>
+          <Grid.ColumnDefinitions><ColumnDefinition Width='18'/><ColumnDefinition Width='*'/><ColumnDefinition Width='Auto'/><ColumnDefinition Width='14'/></Grid.ColumnDefinitions>
           <TextBlock x:Name='Chk' Text='✓' Foreground='{H(Theme.Accent)}' Visibility='Hidden' FontWeight='Bold'/>
           <ContentPresenter Grid.Column='1' ContentSource='Header' RecognizesAccessKey='True'/>
-          <TextBlock Grid.Column='2' Text='{{TemplateBinding InputGestureText}}' Margin='28,0,0,0' Foreground='{H(Theme.FgDim)}'/>
+          <TextBlock x:Name='Gesture' Grid.Column='2' Text='{{TemplateBinding InputGestureText}}' Margin='28,0,4,0' Foreground='{H(Theme.FgDim)}'/>
+          <TextBlock x:Name='Arrow' Grid.Column='3' Text='›' FontSize='15' Margin='0,-3,0,0' Foreground='{H(Theme.FgDim)}' Visibility='Collapsed'/>
+          <Popup x:Name='PART_Popup' Placement='Right' HorizontalOffset='10' VerticalOffset='-7' AllowsTransparency='True' Focusable='False'
+                 PopupAnimation='Fade' IsOpen='{{Binding IsSubmenuOpen, RelativeSource={{RelativeSource TemplatedParent}}}}'>
+            <Border Background='{H(Theme.Popup)}' BorderBrush='{H(Theme.ChromeBorder)}' BorderThickness='1' CornerRadius='8' Padding='4' MinWidth='230'>
+              <StackPanel IsItemsHost='True' KeyboardNavigation.DirectionalNavigation='Cycle'/>
+            </Border>
+          </Popup>
         </Grid>
       </Border>
       <ControlTemplate.Triggers>
+        <Trigger Property='Role' Value='SubmenuHeader'><Setter TargetName='Arrow' Property='Visibility' Value='Visible'/></Trigger>
+        <Trigger Property='Role' Value='TopLevelHeader'><Setter TargetName='Arrow' Property='Visibility' Value='Visible'/></Trigger>
         <Trigger Property='IsHighlighted' Value='True'><Setter TargetName='Bd' Property='Background' Value='{H(Theme.Hover)}'/></Trigger>
+        <Trigger Property='IsSubmenuOpen' Value='True'><Setter TargetName='Bd' Property='Background' Value='{H(Theme.Hover)}'/></Trigger>
         <Trigger Property='IsChecked' Value='True'><Setter TargetName='Chk' Property='Visibility' Value='Visible'/></Trigger>
         <Trigger Property='IsEnabled' Value='False'><Setter Property='Opacity' Value='0.4'/></Trigger>
       </ControlTemplate.Triggers>
