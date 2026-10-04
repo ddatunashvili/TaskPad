@@ -23,7 +23,7 @@ namespace TaskPad
             Owner = owner;
             var bar = new Grid { Height = 36, Background = Theme.Chrome };
             bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            for (int i = 0; i < 4; i++) bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            for (int i = 0; i < 5; i++) bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var scroller = new ScrollViewer
             {
@@ -42,7 +42,8 @@ namespace TaskPad
             AddButton(bar, 1, "+", "New tab (Ctrl+N)", b => Owner.NewTab(this));
             AddButton(bar, 2, "◫", "Split right (Ctrl+\\)", b => Owner.SplitActive(this, Dock.Right));
             AddButton(bar, 3, "✦", "Keywords (Ctrl+K)", b => KeywordsPopup.Show(b, () => Active?.Editor, () => Owner.ShowCheatSheet()));
-            AddButton(bar, 4, "⋯", "Menu", b => Owner.ShowMenu(b, this));
+            AddButton(bar, 4, "↺", "Recently closed (Ctrl+Shift+T reopens last)", b => Recent.ShowMenu(Owner, b));
+            AddButton(bar, 5, "⋯", "Menu", b => Owner.ShowMenu(b, this));
 
             Bar = new Border { Child = bar, BorderBrush = Theme.ChromeBorder, BorderThickness = new Thickness(0, 0, 0, 1) };
             SetDock(Bar, Dock.Top);

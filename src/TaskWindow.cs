@@ -404,6 +404,7 @@ namespace TaskPad
             }
             var g = t.Group;
             g.Remove(t);
+            if (t.Doc.Views.Count == 1) Recent.Add(t.Doc.Path);
             t.Detach();
             if (g.Tabs.Count == 0) RemoveGroup(g);
         }
@@ -549,6 +550,7 @@ namespace TaskPad
             Item("New tab", "Ctrl+N", () => NewTab(g));
             Item("New window", "Ctrl+Shift+N", () => NewWindow());
             Item("Open…", "Ctrl+O", OpenDialog);
+            Item("Recently closed…", "Ctrl+Shift+T", () => Recent.ShowMenu(this, anchor));
             Item("Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
             Item("Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
             Item("Close tab", "Ctrl+W", () => CloseTab(tab));
@@ -669,6 +671,7 @@ namespace TaskPad
             else if (ctrl && key == Key.Oem5) SplitActive(g, Dock.Right);
             else if (ctrlShift && key == Key.Oem5) SplitActive(g, Dock.Bottom);
             else if (ctrlShift && key == Key.M) MoveToNewWindow(ActiveTab);
+            else if (ctrlShift && key == Key.T) Recent.ReopenLast(this);
             else if (ctrl && (key == Key.OemPlus || key == Key.Add)) Workspace.Zoom(+1);
             else if (ctrl && (key == Key.OemMinus || key == Key.Subtract)) Workspace.Zoom(-1);
             else if (ctrl && (key == Key.D0 || key == Key.NumPad0)) Workspace.Zoom(0);
@@ -694,6 +697,7 @@ namespace TaskPad
                 else if (!t.Doc.ConfirmClose(this)) { e.Cancel = true; return; }
             }
             if (hotExit && !Session.Quitting && !Session.Restoring) Session.Save();
+            if (!hotExit) foreach (var t in tabs) if (t.Doc.Views.Count == 1) Recent.Add(t.Doc.Path);
             foreach (var t in tabs) t.Detach();
 
             var st = Workspace.Settings;
