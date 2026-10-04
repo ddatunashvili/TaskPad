@@ -6,7 +6,7 @@
 
 <p align="center">
   A tiny, fast, VS Code-flavoured editor for plain-text task lists on Windows.<br>
-  One portable <code>.exe</code> (~770 KB). No installer, no account, your files stay <code>.txt</code>.
+  One portable <code>.exe</code> (under 1 MB). No installer, no account, your files stay <code>.txt</code>.
 </p>
 
 <p align="center">
@@ -36,6 +36,35 @@ Ctrl+click marks it *in progress*. The status bar tracks how many tasks are done
 Not sure what to type? Hit <kbd>Ctrl</kbd>+<kbd>K</kbd> or the ✦ button and click a marker to apply it to the current line.
 
 <p align="center"><img src="docs/keywords.gif" alt="Keywords picker" width="880"></p>
+
+## Select lines, pick a style
+
+Select several lines and a small toolbar appears: turn them all into tasks, urgent badges, stars,
+a numbered list, headings… or clear the markers. Click the same style again to remove it.
+<kbd>Tab</kbd> on a line under a task makes it a **subtask** with a smaller checkbox.
+
+<p align="center"><img src="docs/multiline.gif" alt="Multi-line markers and subtasks" width="880"></p>
+
+## Comments
+
+Select words and press <kbd>Ctrl</kbd>+<kbd>M</kbd> (or **💬 Comment** in the toolbar). The text gets a soft highlight;
+hover it to read the note, click the bubble to edit or delete. The box is resizable.
+Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) —
+`{==text==}{>>note<<}` — so the file is still plain text.
+
+<p align="center"><img src="docs/comments.gif" alt="Adding and editing a comment" width="880"></p>
+
+## Images
+
+<kbd>Ctrl</kbd>+<kbd>V</kbd> a screenshot or drop image files. They are saved to `images/` next to your file and
+shown as a small chip (`![](images/…png)` in the file). Hover for a preview, click to open the inspector:
+wheel to zoom at the cursor, drag to pan, double-click for fit / 100 %, pixel coordinates and colour,
+**📌 pin on top** to keep it as a reference while you type.
+
+<p align="center"><img src="docs/images.gif" alt="Paste an image and inspect it" width="900"></p>
+
+Want big inline thumbnails instead of chips? Set `imagePreviewHeight=160` in `TaskPad.ini`;
+then hover a thumbnail to drag-resize it (stored as `![|320](…)`) or remove it.
 
 ## Tabs, splits and windows
 
@@ -69,6 +98,9 @@ Type these at the start of a line:
 | `Section:` | section title |
 | `---` / `===` | horizontal line |
 | `// !` | Better Comments prefix also works |
+| `  [ ]` (indented) | subtask, smaller box |
+| `![](path)` | image chip |
+| `{==text==}{>>note<<}` | commented text |
 
 Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl</kbd>+click) are coloured too.
 
@@ -83,6 +115,8 @@ Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl
 | <kbd>Shift</kbd>+<kbd>Alt</kbd>+<kbd>↓</kbd> | duplicate line |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> | delete line |
 | <kbd>Ctrl</kbd>+<kbd>K</kbd> | keywords picker |
+| <kbd>Ctrl</kbd>+<kbd>M</kbd> | comment on selection |
+| <kbd>Ctrl</kbd>+<kbd>V</kbd> | paste text or an image |
 | <kbd>Ctrl</kbd>+<kbd>\\</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\\</kbd> | split right / down |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | move tab to a new window |
 | <kbd>Ctrl</kbd>+<kbd>F</kbd> / <kbd>Ctrl</kbd>+<kbd>H</kbd> | find / replace |
@@ -108,7 +142,7 @@ It is per-user (HKCU), so no admin rights are needed. On Windows 11 the entries 
 ## Settings
 
 `TaskPad.ini` is created next to the exe (portable). Options: `font`, `fontSize`, `wordWrap`,
-`autoSaveDelayMs`, `indentSize`, `leftMargin`. Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
+`autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`. Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
 for the intended look; it falls back to Cascadia Mono / Consolas.
 
 ## Build
