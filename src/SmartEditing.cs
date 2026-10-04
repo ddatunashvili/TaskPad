@@ -136,6 +136,28 @@ namespace TaskPad
             return true;
         }
 
+        /// Tab on a plain line right under a task turns it into a subtask: "  [ ] text".
+        static bool MakeSubtask(TextEditor ed, int lineNumber)
+        {
+            var doc = ed.Document;
+            LineInfo parent = null;
+            for (int n = lineNumber - 1; n >= 1; n--)
+            {
+                var t = doc.GetText(doc.GetLineByNumber(n));
+                if (t.Trim().Length == 0) continue;
+                parent = LineParser.Parse(t);
+                break;
+            }
+            if (parent == null || parent.Check == Check.None) return false;
+
+            var line = doc.GetLineByNumber(lineNumber);
+            var info = LineParser.Parse(doc.GetText(line));
+            string indent = new string(' ', parent.Indent + IndentSize());
+            doc.Replace(line.Offset, info.Indent, indent + "[ ] ");
+            ed.CaretOffset = Math.Max(ed.CaretOffset, line.Offset + indent.Length + 4);
+            return true;
+        }
+
         static bool IndentListLine(TextEditor ed, int dir)
         {
             var doc = ed.Document;
@@ -144,6 +166,7 @@ namespace TaskPad
             {
                 var info = LineParser.Parse(doc.GetText(doc.GetLineByNumber(first)));
                 bool isList = info.Check != Check.None || info.Tag != Tag.None || info.NumberStart >= 0;
+                if (!isList && dir > 0 && MakeSubtask(ed, first)) return true;
                 if (!isList) return false;
             }
             else if (dir > 0) return false; // let AvalonEdit indent multi-line selections
@@ -169,7 +192,7 @@ namespace TaskPad
 
         // ---------- VS Code style line ops ----------
 
-        static void GetLineRange(TextEditor ed, out int first, out int last)
+        public static void GetLineRange(TextEditor ed, out int first, out int last)
         {
             var sel = ed.TextArea.Selection;
             if (sel.IsEmpty)

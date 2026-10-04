@@ -50,7 +50,7 @@ namespace TaskPad
                 {
                     case TokKind.Rule: el = Rule(doc.GetCharAt(offset), tv.ActualWidth - info.Indent * _charW - 40); break;
                     case TokKind.HiddenBullet: el = Host(new Canvas(), 0); break;
-                    case TokKind.Checkbox: el = Checkbox(doc, offset, info.Check); break;
+                    case TokKind.Checkbox: el = Checkbox(doc, offset, info.Check, info.Indent > 0); break;
                     default: el = TagGlyph(info.Tag, t.Length); break;
                 }
                 return new InlineObjectElement(t.Length, el);
@@ -84,9 +84,10 @@ namespace TaskPad
             return Host(r, width);
         }
 
-        FrameworkElement Checkbox(TextDocument doc, int offset, Check state)
+        FrameworkElement Checkbox(TextDocument doc, int offset, Check state, bool subtask)
         {
-            double box = Math.Round(_em * 1.0);
+            // subtasks (indented) get a smaller box
+            double box = Math.Round(_em * (subtask ? 0.78 : 1.0));
             var b = new Border
             {
                 Width = box,

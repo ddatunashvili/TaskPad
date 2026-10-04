@@ -14,6 +14,8 @@ namespace TaskPad
         public int AutoSaveDelayMs = 1000;
         public int IndentSize = 2;
         public double LeftMargin = 28;
+        public double ImagePreviewHeight = 0;   // 0 = compact chip, >0 = inline thumbnail height
+        public double CommentWidth = 360, CommentHeight = 200;
         public double Left = double.NaN, Top = double.NaN, Width = 980, Height = 680;
         public bool Maximized;
 
@@ -41,6 +43,9 @@ namespace TaskPad
                 if (map.TryGetValue("fontSize", out v)) s.FontSize = D(v, s.FontSize);
                 if (map.TryGetValue("wordWrap", out v)) s.WordWrap = v == "true";
                 if (map.TryGetValue("autoSaveDelayMs", out v)) s.AutoSaveDelayMs = (int)D(v, s.AutoSaveDelayMs);
+                if (map.TryGetValue("imagePreviewHeight", out v)) s.ImagePreviewHeight = Math.Max(0, D(v, s.ImagePreviewHeight));
+                if (map.TryGetValue("commentWidth", out v)) s.CommentWidth = D(v, s.CommentWidth);
+                if (map.TryGetValue("commentHeight", out v)) s.CommentHeight = D(v, s.CommentHeight);
                 if (map.TryGetValue("leftMargin", out v)) s.LeftMargin = Math.Max(0, D(v, s.LeftMargin));
                 if (map.TryGetValue("indentSize", out v)) s.IndentSize = Math.Max(1, (int)D(v, s.IndentSize));
                 if (map.TryGetValue("left", out v)) s.Left = D(v, double.NaN);
@@ -68,6 +73,9 @@ namespace TaskPad
                     "autoSaveDelayMs=" + AutoSaveDelayMs,
                     "indentSize=" + IndentSize,
                     "leftMargin=" + LeftMargin.ToString(ci),
+                    "imagePreviewHeight=" + ImagePreviewHeight.ToString(ci),
+                    "commentWidth=" + CommentWidth.ToString(ci),
+                    "commentHeight=" + CommentHeight.ToString(ci),
                     "left=" + Left.ToString(ci),
                     "top=" + Top.ToString(ci),
                     "width=" + Width.ToString(ci),

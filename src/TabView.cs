@@ -143,7 +143,18 @@ namespace TaskPad
 
             ta.TextView.LineTransformers.Add(new TaskColorizer());
             ta.TextView.ElementGenerators.Add(new MarkerGenerator());
+            ta.TextView.ElementGenerators.Add(new ImageGenerator(doc));
             SmartEditing.Attach(ed);
+            SelectionToolbar.Attach(ed);
+            CommentUi.Attach(ed);
+
+            // Ctrl+V / Shift+Insert with an image (or image files) on the clipboard
+            ta.PreviewKeyDown += (s, e) =>
+            {
+                bool paste = e.Key == Key.V && Keyboard.Modifiers == ModifierKeys.Control ||
+                             e.Key == Key.Insert && Keyboard.Modifiers == ModifierKeys.Shift;
+                if (paste && Images.TryPaste(ed, doc)) e.Handled = true;
+            };
 
             var search = SearchPanel.Install(ta);
             search.MarkerBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xFB, 0xBF, 0x24));

@@ -80,7 +80,16 @@ namespace TaskPad
             {
                 if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
                 {
-                    foreach (var f in files.Where(File.Exists)) OpenFile(f);
+                    var images = files.Where(f => File.Exists(f) && Images.IsImageFile(f)).ToList();
+                    var tab = TabUnder(e.OriginalSource as DependencyObject) ?? ActiveTab;
+                    if (images.Count > 0 && tab != null)
+                    {
+                        var pos = tab.Editor.GetPositionFromPoint(e.GetPosition(tab.Editor));
+                        if (pos.HasValue) tab.Editor.TextArea.Caret.Position = pos.Value;
+                        Images.InsertFiles(tab.Editor, tab.Doc, images);
+                        tab.Group.Activate(tab);
+                    }
+                    foreach (var f in files.Where(f => File.Exists(f) && !Images.IsImageFile(f))) OpenFile(f);
                     e.Handled = true;
                 }
             };
@@ -90,6 +99,7 @@ namespace TaskPad
             Closed += (s, e) =>
             {
                 Workspace.Windows.Remove(this);
+                if (Workspace.Windows.Count == 0) ImageViewer.CloseAll();
                 if (Workspace.LastActive == this) Workspace.LastActive = Workspace.Windows.LastOrDefault();
             };
             Workspace.Windows.Add(this);
@@ -145,6 +155,13 @@ namespace TaskPad
                 Walk(_root.Child);
                 return list;
             }
+        }
+
+        TabView TabUnder(DependencyObject d)
+        {
+            for (; d != null; d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+                if (d is EditorGroup g) return g.Active;
+            return null;
         }
 
         public void SetActiveGroup(EditorGroup g)
@@ -562,11 +579,13 @@ namespace TaskPad
 
         [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
-        void DarkTitleBar()
+        void DarkTitleBar() => ApplyDarkTitleBar(this);
+
+        public static void ApplyDarkTitleBar(Window window)
         {
             try
             {
-                var hwnd = new WindowInteropHelper(this).Handle;
+                var hwnd = new WindowInteropHelper(window).Handle;
                 int on = 1;
                 DwmSetWindowAttribute(hwnd, 20, ref on, 4);          // immersive dark mode
                 var c = Theme.Chrome.Color;
@@ -621,6 +640,18 @@ Inline  @person  #tag  2026-10-04 14:30  `code`  https://example.com (Ctrl+click
 11. Ctrl+\          split right (drag a tab to an edge to split)
 12. Ctrl+Shift+M    move tab to new window (or drag it out)
 13. Ctrl+wheel      zoom
+14. Ctrl+M          comment on selected words (hover to read, click bubble to edit)
+15. Ctrl+V          paste an image (saved to images/ next to the file)
+
+## Subtasks
+[ ] Parent task
+  [ ] subtask gets a smaller box (Tab on a line under a task)
+
+## Select several lines
+Select lines and a toolbar appears: tasks, !, ?, *, >, <, /, -, 1., headings or clear.
+
+## Comments
+Highlight {==this text==}{>>comments are stored as CriticMarkup<<} and keep the file plain.
 ";
     }
 }

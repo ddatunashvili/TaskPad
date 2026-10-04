@@ -80,7 +80,7 @@ namespace TaskPad
 
             var footer = new TextBlock
             {
-                Text = "Click to apply to the current line  ·  F1 full cheat sheet",
+                Text = "Click to apply to the line or all selected lines  ·  F1 cheat sheet",
                 Foreground = Theme.FgDim,
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = 11.5,
@@ -245,14 +245,8 @@ namespace TaskPad
                 return;
             }
 
-            // Line prefix: swap whatever marker the line already has for the new one.
-            var info = LineParser.Parse(text);
-            int start = info.Indent, end = info.Indent;
-            if (info.Check != Check.None || info.Tag != Tag.None || info.NumberStart >= 0 || info.Heading > 0)
-                end = info.ContentStart;
-            if (info.IsRule) end = text.Length;
-            doc.Replace(line.Offset + start, end - start, kw.Syntax);
-            ed.CaretOffset = doc.GetLineByOffset(line.Offset).EndOffset;
+            // Line prefix: applies to the caret line or every selected line (toggles off if already set).
+            Markers.Apply(ed, kw.Syntax);
         }
     }
 }
