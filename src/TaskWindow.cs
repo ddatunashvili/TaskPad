@@ -603,7 +603,7 @@ namespace TaskPad
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "Text files (*.txt;*.md;*.todo;*.log)|*.txt;*.md;*.todo;*.log|All files (*.*)|*.*",
+                Filter = "Notes (*.txt;*.task;*.md;*.todo;*.log)|*.txt;*.task;*.md;*.todo;*.log|TaskPad notes with images (*.task)|*.task|All files (*.*)|*.*",
                 Multiselect = true,
             };
             if (ActiveTab?.Doc.Path != null) dlg.InitialDirectory = Path.GetDirectoryName(ActiveTab.Doc.Path);

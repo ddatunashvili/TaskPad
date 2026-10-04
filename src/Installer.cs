@@ -70,6 +70,7 @@ namespace TaskPad
 
             if (o.ContextMenu) Shell.Register(false, target);
             if (o.OpenWith) RegisterOpenWith(target);
+            Shell.RegisterTaskFiles(target);   // .task notes always open in TaskPad
 
             var version = Updater.Short(Updater.Current);
             using (var k = Registry.CurrentUser.CreateSubKey(UninstallKey))

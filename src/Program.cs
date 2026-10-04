@@ -127,6 +127,7 @@ namespace TaskPad
             }
             if (!standalone) StartPipeServer();
             Updater.CleanupOld();
+            if (!standalone) Shell.EnsureTaskFiles();
             if (!standalone) Updater.Start();
             return app.Run();
         }

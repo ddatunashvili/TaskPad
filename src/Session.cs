@@ -216,6 +216,7 @@ namespace TaskPad
                 {
                     var text = File.ReadAllText(backupPath, Encoding.UTF8);
                     doc = new Doc(text, path);
+                    if (path != null) TaskFile.EnsureAssets(doc);
                     if (path == null)
                     {
                         doc.UntitledName = untitled;

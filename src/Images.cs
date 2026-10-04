@@ -23,9 +23,11 @@ namespace TaskPad
         public static bool IsImageFile(string path) => Exts.Contains(Path.GetExtension(path).ToLowerInvariant());
 
         /// Folder where new images for this doc go.
+        /// .task notes keep images inside the note; everything else uses one app folder
+        /// (%LOCALAPPDATA%\TaskPad\images) instead of creating "images" folders next to notes.
         static string StoreDir(Doc doc)
         {
-            if (doc.Path != null) return Path.Combine(Path.GetDirectoryName(doc.Path), "images");
+            if (doc.AssetDir != null) return Path.Combine(doc.AssetDir, "images");
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TaskPad", "images");
         }
 
@@ -33,15 +35,31 @@ namespace TaskPad
         static string RefFor(Doc doc, string file)
         {
             string p = file;
-            if (doc.Path != null)
+            if (doc.AssetDir != null || doc.Path != null)
             {
-                var baseDir = Path.GetDirectoryName(doc.Path).TrimEnd('\\') + "\\";
+                var baseDir = (doc.AssetDir ?? Path.GetDirectoryName(doc.Path)).TrimEnd('\\') + "\\";
                 if (file.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase)) p = file.Substring(baseDir.Length).Replace('\\', '/');
             }
             return $"![]({p})";
         }
 
         public static string Resolve(Doc doc, string reference)
+        {
+            reference = reference.Trim().Trim('<', '>');
+            if (reference.StartsWith("file:///", StringComparison.OrdinalIgnoreCase)) reference = new Uri(reference).LocalPath;
+            if (Path.IsPathRooted(reference)) return reference;
+            if (doc.AssetDir != null)
+            {
+                var inside = Path.Combine(doc.AssetDir, reference.Replace('/', '\\'));
+                if (File.Exists(inside) || doc.Path == null) return inside;
+            }
+            if (doc.Path == null) return null;
+            try { return Path.GetFullPath(Path.Combine(Path.GetDirectoryName(doc.Path), reference.Replace('/', '\\'))); }
+            catch { return null; }
+        }
+
+        /// Where an image reference points, ignoring the .task cache (used when packing a note).
+        public static string ResolveForAdopt(Doc doc, string reference)
         {
             reference = reference.Trim().Trim('<', '>');
             if (reference.StartsWith("file:///", StringComparison.OrdinalIgnoreCase)) reference = new Uri(reference).LocalPath;

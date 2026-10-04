@@ -97,6 +97,15 @@ in the background — nothing to install.
 
 <p align="center"><img src="docs/pdf-export.png" alt="Exported PDF" width="560"></p>
 
+## `.task` notes — one file with everything
+
+A `.task` file is a whole note in one file: the text **and** its pasted images (and comments). Double-click it and
+it opens in TaskPad — the installer (or first run) makes TaskPad the default app for `.task`, with its own icon,
+and adds **New → TaskPad note** to Explorer. New notes save as `.task` by default; pick `.txt` in the Save dialog
+for a plain text file. Save an existing `.txt` as `.task` and every image it references is packed in.
+
+Under the hood it is a ZIP archive (`note.txt` + `images/`), so nothing is locked in: rename it to `.zip` to look inside.
+
 ## Images
 
 <kbd>Ctrl</kbd>+<kbd>V</kbd> a screenshot or drop image files. They are saved to `images/` next to your file and

@@ -15,6 +15,7 @@ namespace TaskPad
         public readonly TextDocument Document = new TextDocument();
         public readonly List<TabView> Views = new List<TabView>();
         public string Path, UntitledName;
+        public string AssetDir;          // folder holding this note's images (.task notes)
         public bool Dirty;
         public Encoding Encoding = new UTF8Encoding(false);
         public DateTime LastWriteUtc;
@@ -52,6 +53,11 @@ namespace TaskPad
 
         public static Doc Open(string path)
         {
+            if (TaskFile.Is(path))
+            {
+                var t = TaskFile.Load(path, out var assets);
+                return new Doc(t, path) { AssetDir = assets, LastWriteUtc = File.GetLastWriteTimeUtc(path) };
+            }
             var text = ReadText(path, out var enc);
             return new Doc(text, path) { Encoding = enc, LastWriteUtc = File.GetLastWriteTimeUtc(path) };
         }
@@ -69,16 +75,26 @@ namespace TaskPad
             {
                 var dlg = new SaveFileDialog
                 {
-                    Filter = "Text files (*.txt)|*.txt|Markdown (*.md)|*.md|Todo (*.todo)|*.todo|All files (*.*)|*.*",
-                    FileName = Path != null ? System.IO.Path.GetFileName(Path) : "tasks.txt",
+                    Filter = "Text files (*.txt)|*.txt|TaskPad note with images (*.task)|*.task|Markdown (*.md)|*.md|Todo (*.todo)|*.todo|All files (*.*)|*.*",
+                    FilterIndex = Path == null || TaskFile.Is(Path) ? 2 : 1,   // new notes default to .task
+                    FileName = Path != null ? System.IO.Path.GetFileName(Path) : "tasks" + TaskFile.Ext,
                     InitialDirectory = Path != null ? System.IO.Path.GetDirectoryName(Path) : Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                 };
                 if (dlg.ShowDialog(owner) != true) return false;
                 Path = dlg.FileName;
                 Document.FileName = Path;
+                if (TaskFile.Is(Path)) AssetDir = TaskFile.CacheDir(Path);
             }
             try
             {
+                if (TaskFile.Is(Path))
+                {
+                    TaskFile.Save(this);
+                    LastWriteUtc = File.GetLastWriteTimeUtc(Path);
+                    Dirty = false;
+                    Raise();
+                    return true;
+                }
                 var bytes = Encoding.GetBytes(Document.Text);
                 var pre = Encoding.GetPreamble();
                 using (var fs = new FileStream(Path, FileMode.Create, FileAccess.Write, FileShare.Read))
@@ -116,7 +132,8 @@ namespace TaskPad
             if (w == LastWriteUtc) return;
             try
             {
-                var text = ReadText(Path, out var enc);
+                Encoding enc = Encoding;
+                var text = TaskFile.Is(Path) ? TaskFile.Load(Path, out AssetDir) : ReadText(Path, out enc);
                 var carets = new List<int>();
                 foreach (var v in Views) carets.Add(v.Editor.CaretOffset);
                 Document.Text = text;
