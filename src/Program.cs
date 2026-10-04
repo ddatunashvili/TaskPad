@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.IO.Pipes;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -48,12 +49,27 @@ namespace TaskPad
         [MethodImpl(MethodImplOptions.NoInlining)]
         static int Run(string[] args)
         {
+            // "TaskPad-Setup.exe" (or --install) runs the installer instead of the editor
+            if (Installer.IsSetupLaunch() && !args.Any(a => a.StartsWith("--", StringComparison.Ordinal)))
+                return Installer.RunSetup();
+
             var files = new List<string>();
             for (int i = 0; i < args.Length; i++)
             {
                 var a = args[i];
                 switch (a.ToLowerInvariant())
                 {
+                    case "--install":
+                        if (args.Any(x => x.Equals("--quiet", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            Installer.Install(new Installer.Options { Launch = false });
+                            return 0;
+                        }
+                        return Installer.RunSetup();
+                    case "--uninstall":
+                        return Installer.RunUninstall(args.Any(x => x.Equals("--quiet", StringComparison.OrdinalIgnoreCase)));
+                    case "--quiet":
+                        break;
                     case "--register":
                         Shell.Register(true);
                         return 0;

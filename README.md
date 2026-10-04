@@ -10,12 +10,28 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ddatunashvili/TaskPad/releases/latest"><b>⬇ Download TaskPad.exe</b></a>
+  <a href="https://github.com/ddatunashvili/TaskPad/releases/latest/download/TaskPad-Setup.exe"><b>⬇ Install (TaskPad-Setup.exe)</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/ddatunashvili/TaskPad/releases/latest/download/TaskPad.exe">Portable (TaskPad.exe)</a>
 </p>
 
 <p align="center">
   <img src="docs/screenshot.png" alt="TaskPad screenshot" width="880">
 </p>
+
+## Install
+
+**Installer** — run `TaskPad-Setup.exe`. It installs for your user only (no admin) to
+`%LOCALAPPDATA%\Programs\TaskPad`, adds a Start Menu shortcut, optionally a Desktop shortcut, the Explorer
+right-click entries and an **Open with** entry for `.txt`, `.md`, `.todo`, `.log`. Uninstall from
+**Settings → Apps** like any other app. Running the setup again updates in place.
+
+Silent install / uninstall: `TaskPad-Setup.exe --install --quiet` and
+`%LOCALAPPDATA%\Programs\TaskPad\TaskPad.exe --uninstall --quiet`.
+
+**Portable** — just run `TaskPad.exe` from anywhere (settings live next to it).
+
+Both are the same program and both update themselves.
 
 ## Why
 

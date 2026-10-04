@@ -9,7 +9,7 @@
     <RootNamespace>TaskPad</RootNamespace>
     <ApplicationIcon>assets\taskpad.ico</ApplicationIcon>
     <StartupObject>TaskPad.Program</StartupObject>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Copyright>Copyright (c) 2026 ddatunashvili</Copyright>
     <Product>TaskPad</Product>
     <DebugType>none</DebugType>
@@ -24,6 +24,7 @@
   <ItemGroup>
     <EmbeddedResource Include="$(PkgAvalonEdit)\lib\net462\ICSharpCode.AvalonEdit.dll" LogicalName="ICSharpCode.AvalonEdit.dll" />
     <Resource Include="assets\taskpad.ico" />
+    <Resource Include="assets\taskpad.png" />
   </ItemGroup>
 
 </Project>

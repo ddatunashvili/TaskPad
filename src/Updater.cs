@@ -147,6 +147,6 @@ namespace TaskPad
         }
 
         static Version Normalize(Version v) => new Version(v.Major, v.Minor, Math.Max(0, v.Build), Math.Max(0, v.Revision));
-        public static string Short(Version v) => v.Build > 0 ? $"{v.Major}.{v.Minor}.{v.Build}" : $"{v.Major}.{v.Minor}";
+        public static string Short(Version v) => $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
     }
 }

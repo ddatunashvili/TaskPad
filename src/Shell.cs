@@ -23,9 +23,9 @@ namespace TaskPad
             }
         }
 
-        public static void Register(bool showResult)
+        public static void Register(bool showResult, string exePath = null)
         {
-            var exe = ExePath;
+            var exe = exePath ?? ExePath;
             try
             {
                 foreach (var ext in Extensions)
