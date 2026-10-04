@@ -17,7 +17,9 @@ namespace TaskPad
         static readonly Geometry CheckGeo = Geometry.Parse("M 0,5 L 3.5,8.5 L 10,1.5");
         static readonly Geometry CrossGeo = Geometry.Parse("M 0,0 L 8,8 M 8,0 L 0,8");
 
-        double _lineH, _baseline, _charW, _em;
+        double _lineH, _baseline, _charW, _em, _gap;
+        static readonly double[] HeadScale = { 1, 1.6, 1.4, 1.25, 1.12, 1.04, 0.96 };   // same as TaskColorizer
+        static readonly double[] HeadTop = { 0, 0.9, 0.7, 0.55, 0.45, 0.35, 0.3 };     // gap above, in em
         readonly Func<int> _caretLine;
 
         /// `caretLine`: heading markers ("## ") stay visible on the caret's line so the level can be edited.
@@ -35,8 +37,7 @@ namespace TaskPad
         }
 
         bool Skip(Tok t, ICSharpCode.AvalonEdit.Document.DocumentLine line) =>
-            (_revealLine != null && _revealLine() == line.LineNumber) ||
-            (t.Kind == TokKind.HeadingMark && _caretLine != null && _caretLine() == line.LineNumber);
+            _revealLine != null && _revealLine() == line.LineNumber;
 
         public override int GetFirstInterestedOffset(int startOffset)
         {
@@ -61,6 +62,7 @@ namespace TaskPad
             _lineH = tv.DefaultLineHeight;
             _baseline = tv.DefaultBaseline;
             _charW = tv.WideSpaceWidth;
+            _gap = Math.Max(0, Workspace.Settings.MarkerSpacing);
 
             foreach (var t in info.Tokens)
             {
@@ -69,15 +71,15 @@ namespace TaskPad
                 switch (t.Kind)
                 {
                     case TokKind.Rule: el = Rule(doc.GetCharAt(offset), tv.ActualWidth - info.Indent * _charW - 40); break;
-                    case TokKind.HiddenBullet:
-                    case TokKind.HeadingMark: el = Host(new Canvas(), 0); break;
+                    case TokKind.HiddenBullet: el = Host(new Canvas(), 0); break;
+                    case TokKind.HeadingMark: el = HeadingSpacer(info.Heading, t.Length, _caretLine != null && _caretLine() == line.LineNumber); break;
                     case TokKind.Checkbox: el = Checkbox(doc, offset, info.Check, info.Indent > 0); break;
                     default: el = TagGlyph(info.Tag, t.Length); break;
                 }
-                if (t.Kind == TokKind.Checkbox || t.Kind == TokKind.Tag)
+                if (t.Kind == TokKind.Checkbox || t.Kind == TokKind.Tag || t.Kind == TokKind.HeadingMark)
                 {
                     var lineAnchor = doc.CreateAnchor(line.Offset);
-                    KeywordMenu.Attach(el, tv, lineAnchor);
+                    if (t.Kind != TokKind.HeadingMark) KeywordMenu.Attach(el, tv, lineAnchor);
                     el.PreviewMouseLeftButtonDown += (s, e) =>
                     {
                         if (e.ClickCount < 2 || _reveal == null || lineAnchor.IsDeleted) return;
@@ -94,15 +96,41 @@ namespace TaskPad
             return null;
         }
 
+        /// Wraps a marker visual. The host is a bit taller than a text line (markerSpacing, half above /
+        /// half below) so task and icon lines get breathing room; the line grows to fit it.
         FrameworkElement Host(FrameworkElement child, double width)
         {
             child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var c = new Canvas { Width = width, Height = _lineH, Background = Brushes.Transparent };
+            double h = _lineH + _gap;
+            var c = new Canvas { Width = width, Height = h, Background = Brushes.Transparent };
             // wide glyphs (badges, ★) overflow to the right into the following space, never left where they get clipped
             Canvas.SetLeft(child, Math.Max(1, Math.Round((width - child.DesiredSize.Width) / 2)));
-            Canvas.SetTop(child, Math.Round((_lineH - child.DesiredSize.Height) / 2));
+            Canvas.SetTop(child, Math.Round((h - child.DesiredSize.Height) / 2));
             c.Children.Add(child);
-            TextBlock.SetBaselineOffset(c, _baseline);
+            TextBlock.SetBaselineOffset(c, _baseline + _gap / 2);
+            return c;
+        }
+
+        /// Hidden "## " of a heading, sized to add space above (more for h1) and a little below.
+        /// On the caret's line it shows the hashes as dim text so the level stays visible while editing.
+        FrameworkElement HeadingSpacer(int level, int len, bool showHashes)
+        {
+            double scale = HeadScale[Math.Max(1, Math.Min(6, level))];
+            double top = Math.Round(_em * HeadTop[Math.Max(1, Math.Min(6, level))] * (_gap > 0 ? 1 : 0));
+            double bottom = Math.Round(_em * 0.25 * (_gap > 0 ? 1 : 0));
+            double baseline = _baseline * scale + top;
+            double h = baseline + (_lineH - _baseline) * scale + bottom;
+            var c = new Canvas { Height = h, Background = Brushes.Transparent };
+            if (showHashes)
+            {
+                var tb = new TextBlock { Text = new string('#', level), Foreground = Theme.FgFaint, FontSize = _em, FontFamily = CurrentContext.GlobalTextRunProperties.Typeface.FontFamily };
+                tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                c.Width = Math.Max(len * _charW, tb.DesiredSize.Width + _charW);
+                Canvas.SetTop(tb, baseline - _baseline);
+                c.Children.Add(tb);
+            }
+            else c.Width = 0;
+            TextBlock.SetBaselineOffset(c, baseline);
             return c;
         }
 
