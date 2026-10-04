@@ -192,12 +192,13 @@ namespace TaskPad
     public sealed class DueGenerator : VisualLineElementGenerator
     {
         readonly Func<int> _caretLine;
-        public DueGenerator(Func<int> caretLine) { _caretLine = caretLine; }
+        readonly TextEditor _ed;
+        public DueGenerator(TextEditor ed, Func<int> caretLine) { _ed = ed; _caretLine = caretLine; }
 
         Match Next(int startOffset, out DocumentLine line)
         {
             line = CurrentContext.Document.GetLineByOffset(startOffset);
-            if (line.LineNumber == _caretLine() || Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return null;
+            if ((line.LineNumber == _caretLine() && !DuePicker.JustSet(_ed)) || Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return null;
             var text = CurrentContext.Document.GetText(line);
             int rel = startOffset - line.Offset;
             if (text.IndexOf("due", rel, StringComparison.OrdinalIgnoreCase) < 0) return null;
@@ -239,10 +240,14 @@ namespace TaskPad
                 BorderThickness = new Thickness(1),
                 BorderBrush = brush,
                 Background = Theme.Hover,
-                ToolTip = when.ToString(hasTime ? "dddd, d MMMM yyyy  HH:mm" : "dddd, d MMMM yyyy", CultureInfo.InvariantCulture) + (done ? "" : "  —  " + Due.Countdown(when, DateTime.Now)) + "\nclick the line to edit",
+                ToolTip = when.ToString(hasTime ? "dddd, d MMMM yyyy  HH:mm" : "dddd, d MMMM yyyy", CultureInfo.InvariantCulture) + (done ? "" : "  —  " + Due.Countdown(when, DateTime.Now)) + "\nclick to change",
                 Opacity = done ? 0.7 : 1,
             };
             TextBlock.SetBaselineOffset(pill, tv.DefaultBaseline - 1);
+            pill.Cursor = System.Windows.Input.Cursors.Hand;
+            int lineNo = line.LineNumber;
+            pill.MouseLeftButtonDown += (s, e) => e.Handled = true;
+            pill.MouseLeftButtonUp += (s, e) => { e.Handled = true; DuePicker.Show(_ed, lineNo, offset); };
             return new InlineObjectElement(m.Length, pill);
         }
     }

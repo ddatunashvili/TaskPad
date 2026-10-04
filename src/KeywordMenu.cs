@@ -37,6 +37,13 @@ namespace TaskPad
             return sp;
         }
 
+        static ICSharpCode.AvalonEdit.TextEditor FindEditor(DependencyObject d)
+        {
+            for (; d != null; d = VisualTreeHelper.GetParent(d))
+                if (d is ICSharpCode.AvalonEdit.TextEditor e) return e;
+            return null;
+        }
+
         public static void Attach(FrameworkElement el, TextView tv, TextAnchor lineAnchor)
         {
             el.MouseRightButtonDown += (s, e) => e.Handled = true;
@@ -62,6 +69,13 @@ namespace TaskPad
                 var remove = new MenuItem { Header = "Remove marker" };
                 remove.Click += (a, b) => Markers.SetLine(doc, lineNo, null);
                 menu.Items.Add(remove);
+                var deadline = new MenuItem { Header = Row("⏰|Set deadline…"), InputGestureText = "due:" };
+                deadline.Click += (a, b) =>
+                {
+                    if (tv.GetService(typeof(TextArea)) is TextArea area && FindEditor(area) is ICSharpCode.AvalonEdit.TextEditor editor)
+                        DuePicker.Show(editor, lineNo, doc.GetLineByNumber(lineNo).EndOffset);
+                };
+                menu.Items.Add(deadline);
                 var type = new MenuItem { Header = "Type a different keyword…", InputGestureText = "raw text" };
                 type.Click += (a, b) =>
                 {

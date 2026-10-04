@@ -199,7 +199,9 @@ Heading `#` marks stay hidden except on the line you're editing.
 
 **Deadlines:** add `due:2026-10-10`, `due:2026-10-10 18:00` or `due:18:00` to any line — it shows as a live countdown
 pill (`⏰ Fri 10 Oct 18:00 · in 3d 4h`): green under a week, amber under a day, red when overdue, grey once the task is ticked.
-Type `due:+2h`, `+3d`, `+1w`, `+1mo`, `tomorrow` or `friday` and press space — it turns into the date. A toast reminds you
+Type `due:` and a **date & time picker** pops up (quick picks, calendar, times); click any countdown pill to change or
+remove it. Or keep typing `+2h`, `+3d`, `+1w`, `+1mo`, `tomorrow`, `friday` and press space — it turns into the date.
+Also: Ctrl+K → ⏰ Deadline, or right-click a checkbox → **Set deadline…**. A toast reminds you
 when a deadline arrives, and the status bar counts overdue tasks.
 
 Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl</kbd>+click) are coloured too.

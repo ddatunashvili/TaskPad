@@ -21,6 +21,8 @@ namespace TaskPad
             {
                 if (e.Text == "]" && !Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line)) ExpandEmptyBox(ed);
                 if ((e.Text == " " || e.Text == ")") && !Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line)) Due.ExpandBeforeCaret(ed);
+                if (e.Text == ":" && DueTyped(ed)) DuePicker.Show(ed, ed.TextArea.Caret.Line, ed.CaretOffset, takeFocus: false);
+                else if (DuePicker.IsOpen) DuePicker.Close();
             };
         }
 
@@ -66,6 +68,14 @@ namespace TaskPad
             doc.Insert(line.EndOffset, nl + indent + nl + indent + marker);
             ed.CaretOffset = line.EndOffset + nl.Length + indent.Length;
             return true;
+        }
+
+        static bool DueTyped(TextEditor ed)
+        {
+            if (Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line)) return false;
+            var line = ed.Document.GetLineByOffset(ed.CaretOffset);
+            var before = ed.Document.GetText(line.Offset, ed.CaretOffset - line.Offset);
+            return Regex.IsMatch(before, @"(?<![\w@])due:$", RegexOptions.IgnoreCase);
         }
 
         // ---------- checkbox state ----------

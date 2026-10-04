@@ -47,7 +47,7 @@ namespace TaskPad
             new Kw("@", "@name", "Person", Theme.Mention, Mode.Inline),
             new Kw("#", "#tag", "Tag", Theme.HashTag, Mode.Inline),
             new Kw("📅", "{date}", "Date  (Ctrl+;)", Theme.Date, Mode.Inline),
-            new Kw("⏰", "{due}", "Deadline with countdown — also due:+3d, due:friday", Theme.Todo, Mode.Inline),
+            new Kw("⏰", "{due}", "Deadline — date & time picker, live countdown", Theme.Todo, Mode.Inline),
             new Kw("`", "`code`", "Code", Theme.Code, Mode.Inline),
         };
 
@@ -225,6 +225,11 @@ namespace TaskPad
             var line = doc.GetLineByOffset(ed.CaretOffset);
             var text = doc.GetText(line);
 
+            if (kw.Syntax == "{due}")
+            {
+                DuePicker.Show(ed, line.LineNumber, ed.CaretOffset);
+                return;
+            }
             if (kw.Mode == Mode.Inline)
             {
                 var s = kw.Syntax.Replace("{date}", DateTime.Now.ToString("yyyy-MM-dd"))
