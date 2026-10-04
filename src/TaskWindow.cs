@@ -650,6 +650,7 @@ namespace TaskPad
                 Toast(Workspace.Settings.AutoSave ? "Auto save on" : "Auto save off — Ctrl+S to save");
             }, Workspace.Settings.AutoSave);
             Item("Light theme", null, () => Theme.Switch(!Theme.IsLight), Theme.IsLight);
+            Item("Code highlight theme…", Code.Current.Name, () => ShowCodeThemes(anchor));
             Item("Word wrap", "Alt+Z", Workspace.ToggleWrap, Workspace.Settings.WordWrap);
             Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
             Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
@@ -669,6 +670,22 @@ namespace TaskPad
                 Workspace.Settings.AutoUpdate = Workspace.Settings.AutoUpdate == "auto" ? "ask" : "auto";
                 Workspace.Settings.Save();
             }, Workspace.Settings.AutoUpdate == "auto");
+            m.IsOpen = true;
+        }
+
+        void ShowCodeThemes(FrameworkElement anchor)
+        {
+            var m = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+            var current = Workspace.Settings.CodeTheme ?? "auto";
+            void Add(string label, string value)
+            {
+                var mi = new MenuItem { Header = label, IsCheckable = true, IsChecked = string.Equals(current, value, StringComparison.OrdinalIgnoreCase) };
+                mi.Click += (s, e) => Code.SetTheme(value);
+                m.Items.Add(mi);
+            }
+            Add("Auto (One Dark / GitHub Light)", "auto");
+            m.Items.Add(new Separator());
+            foreach (var t in Code.Themes) Add(t.Name + (t.Light ? "  (light)" : ""), t.Name);
             m.IsOpen = true;
         }
 

@@ -28,7 +28,7 @@ namespace TaskPad
             {
                 var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(Path.GetFullPath(path).ToLowerInvariant()));
                 var id = BitConverter.ToString(hash, 0, 8).Replace("-", "").ToLowerInvariant();
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TaskPad", "task-cache", id);
+                return Path.Combine(Path.GetTempPath(), "TaskPad", "open", id);   // working copy only; the .task file holds everything
             }
         }
 
@@ -117,6 +117,24 @@ namespace TaskPad
                 using (var w = new StreamWriter(zip.CreateEntry("taskpad", CompressionLevel.NoCompression).Open())) w.Write("1");
                 using (var w = new StreamWriter(zip.CreateEntry(NoteEntry).Open(), new UTF8Encoding(false))) w.Write(text);
             }
+        }
+
+        /// Removes the unpacked working copy once the note is closed (the .task file is the real thing).
+        public static void Discard(Doc doc)
+        {
+            if (doc.AssetDir == null || !Is(doc.Path)) return;
+            try { if (Directory.Exists(doc.AssetDir)) Directory.Delete(doc.AssetDir, true); } catch { }
+        }
+
+        /// Older versions kept working copies in %LOCALAPPDATA%\TaskPad\task-cache; nothing needs them.
+        public static void CleanupLegacyCache()
+        {
+            try
+            {
+                var old = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TaskPad", "task-cache");
+                if (Directory.Exists(old)) Directory.Delete(old, true);
+            }
+            catch { }
         }
 
         /// Unpacks only the images (session restore of an unsaved .task note).

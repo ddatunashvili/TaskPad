@@ -106,6 +106,16 @@ namespace TaskPad
             if (Doc.Views.Count == 0) Doc.Dispose();
         }
 
+        string _codePath = "\u0000";
+
+        /// Code files (.py, .js, …) get language highlighting; notes get none (their ``` blocks are coloured separately).
+        public void ApplyCodeMode()
+        {
+            _codePath = Doc.Path;
+            Editor.SyntaxHighlighting = Code.IsCodeFile(Doc.Path) ? Code.ForFile(Doc.Path) : null;
+            Editor.TextArea.TextView.Redraw();
+        }
+
         /// Re-applies editor colours after a theme switch.
         public void ApplyTheme()
         {
@@ -122,6 +132,7 @@ namespace TaskPad
 
         public void Refresh()
         {
+            if (_codePath != Doc.Path) ApplyCodeMode();   // e.g. after Save As with another extension
             bool active = Group != null && Group.Active == this;
             bool focusedGroup = Group != null && Group.Owner.ActiveGroup == Group;
             _title.Text = Doc.Name;
@@ -223,6 +234,7 @@ namespace TaskPad
                 lastCaretLine = now;
             };
             ta.TextView.ElementGenerators.Add(new ImageGenerator(doc));
+            ta.TextView.LineTransformers.Add(new Code.FenceColorizer());
             SmartEditing.Attach(ed);
             SelectionToolbar.Attach(ed);
             HexAndLinks.Attach(ed);

@@ -130,7 +130,7 @@ namespace TaskPad
         protected override void ColorizeLine(DocumentLine line)
         {
             var text = CurrentContext.Document.GetText(line);
-            if (text.IndexOf("{==", StringComparison.Ordinal) < 0) return;
+            if (text.IndexOf("{==", StringComparison.Ordinal) < 0 || Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return;
             for (var m = Comments.Markup.Match(text); m.Success; m = m.NextMatch())
             {
                 var t = m.Groups["t"];
@@ -168,7 +168,7 @@ namespace TaskPad
             offset = length = markupStart = -1;
             bubble = false;
             replies = 0;
-            if (text.IndexOf("{", StringComparison.Ordinal) < 0) return false;
+            if (text.IndexOf("{", StringComparison.Ordinal) < 0 || Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return false;
             for (var m = Comments.Markup.Match(text); m.Success; m = m.NextMatch())
             {
                 int s = line.Offset + m.Index, e = s + m.Length;

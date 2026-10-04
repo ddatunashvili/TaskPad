@@ -89,6 +89,15 @@ their default app). Right-click for **New File** (no extension = `.task`), **New
 
 Each tab also has a small folder button next to ✕ that opens the file's folder in Windows Explorer.
 
+## Code
+
+Fenced blocks in notes (```` ```python ```` … ```` ``` ````, also `~~~`) get real syntax highlighting — task markers,
+images and `#` headings are ignored inside them, and Enter after an opening fence adds the closing one. Code files
+(`.py .js .ts .cs .java .kt .swift .go .rs .c/.cpp .php .rb .sh .ps1 .bat .sql .json .yaml .toml .ini .html .xml .css
+.lua .dart .r .scala .vb Dockerfile Makefile .diff` …) open as code with language highlighting.
+`⋯` → **Code highlight theme…**: Auto (One Dark / GitHub Light), One Dark, Dracula, Monokai, Nord, GitHub Dark,
+GitHub Light, One Light, Solarized Light.
+
 ## Light and dark
 
 Dark by default. `⋯` → **Light theme** switches every window instantly (or `theme=light` in `TaskPad.ini`).
@@ -122,7 +131,8 @@ for a plain text file. Save an existing `.txt` as `.task` and every image it ref
 `⋯` → **Export as .task (with images)…** writes a self-contained copy of any note. Drop `.txt`, `.task` or
 `.md` files onto the window to open them (PDFs open in your PDF viewer).
 
-Under the hood it is a ZIP archive (`note.txt` + `images/`), so nothing is locked in: rename it to `.zip` to look inside.
+Pasted images are written into the `.task` file immediately; while a note is open it is unpacked to a temp folder
+that is removed when you close it. Under the hood it is a ZIP archive (`note.txt` + `images/`), so nothing is locked in: rename it to `.zip` to look inside.
 
 ## Images
 
@@ -233,7 +243,7 @@ It is per-user (HKCU), so no admin rights are needed. On Windows 11 the entries 
 `TaskPad.ini` is created next to the exe (portable). Options: `font`, `fontSize`, `wordWrap`,
 `autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`, `commentsMode` (`hover`/`margin`),
 `commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`), `restoreSession`, `autoSave`,
-`markerSpacing` (extra px around task/icon lines and headings; `0` = compact), `theme` (`dark`/`light`). Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
+`markerSpacing` (extra px around task/icon lines and headings; `0` = compact), `theme` (`dark`/`light`), `codeTheme`. Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
 for the intended look; it falls back to Cascadia Mono / Consolas.
 
 ## Build

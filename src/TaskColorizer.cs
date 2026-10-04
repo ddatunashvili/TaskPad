@@ -19,7 +19,7 @@ namespace TaskPad
 
         protected override void ColorizeLine(DocumentLine line)
         {
-            if (line.Length == 0) return;
+            if (line.Length == 0 || Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return;
             var text = CurrentContext.Document.GetText(line);
             var info = LineParser.Parse(text);
             int o = line.Offset, end = line.EndOffset;

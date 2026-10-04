@@ -42,6 +42,7 @@ namespace TaskPad
         public override int GetFirstInterestedOffset(int startOffset)
         {
             var line = CurrentContext.Document.GetLineByOffset(startOffset);
+            if (Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return -1;
             var info = LineParser.Parse(CurrentContext.Document.GetText(line));
             foreach (var t in info.Tokens)
             {

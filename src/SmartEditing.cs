@@ -19,7 +19,7 @@ namespace TaskPad
             ed.TextArea.PreviewKeyDown += (s, e) => OnKey(ed, e);
             ed.TextArea.TextEntered += (s, e) =>
             {
-                if (e.Text == "]") ExpandEmptyBox(ed);
+                if (e.Text == "]" && !Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line)) ExpandEmptyBox(ed);
             };
         }
 
@@ -29,7 +29,10 @@ namespace TaskPad
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
             bool handled = true;
 
-            if (key == Key.Enter && mods == ModifierKeys.None) handled = ContinueList(ed);
+            bool code = Code.IsCodeLine(ed.Document, ed.TextArea.Caret.Line);
+            if (key == Key.Enter && mods == ModifierKeys.None && CloseFence(ed)) handled = true;
+            else if (code && (key == Key.Enter || key == Key.Tab)) handled = false;   // plain editor behaviour inside code
+            else if (key == Key.Enter && mods == ModifierKeys.None) handled = ContinueList(ed);
             else if (key == Key.Enter && mods == ModifierKeys.Control) ToggleLines(ed);
             else if (key == Key.Tab && mods == ModifierKeys.None) handled = IndentListLine(ed, +1);
             else if (key == Key.Tab && mods == ModifierKeys.Shift) handled = IndentListLine(ed, -1);
@@ -43,6 +46,24 @@ namespace TaskPad
             else handled = false;
 
             if (handled) e.Handled = true;
+        }
+
+        /// Enter at the end of an opening ``` line with no closing fence: add the closing ``` below.
+        static bool CloseFence(TextEditor ed)
+        {
+            if (!ed.TextArea.Selection.IsEmpty) return false;
+            var doc = ed.Document;
+            var line = doc.GetLineByOffset(ed.CaretOffset);
+            if (ed.CaretOffset != line.EndOffset) return false;
+            var f = Code.FenceAt(doc, line.LineNumber);
+            if (f == null || f.Open != line.LineNumber || f.Close > 0) return false;
+            var text = doc.GetText(line);
+            var indent = text.Substring(0, text.Length - text.TrimStart().Length);
+            var marker = text.TrimStart().Substring(0, 3);
+            var nl = TextUtilities.GetNewLineFromDocument(doc, line.LineNumber);
+            doc.Insert(line.EndOffset, nl + indent + nl + indent + marker);
+            ed.CaretOffset = line.EndOffset + nl.Length + indent.Length;
+            return true;
         }
 
         // ---------- checkbox state ----------

@@ -67,6 +67,8 @@ namespace TaskPad
         {
             _autoSave.Stop();
             Workspace.Docs.Remove(this);
+            // unsaved .task notes keep their working copy for session restore; saved ones don't need it
+            if (!Dirty) TaskFile.Discard(this);
         }
 
         public bool Save(Window owner, bool saveAs)

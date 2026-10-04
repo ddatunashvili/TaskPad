@@ -107,6 +107,7 @@ namespace TaskPad
                     enc.Save(fs);
                 }
                 Insert(ed, RefFor(doc, path));
+                PackNow(doc);
                 return true;
             }
             catch (Exception ex)
@@ -135,6 +136,13 @@ namespace TaskPad
             if (refs.Count == 0) return;
             var nl = ICSharpCode.AvalonEdit.Document.TextUtilities.GetNewLineFromDocument(ed.Document, ed.TextArea.Caret.Line);
             Insert(ed, string.Join(nl, refs));
+            PackNow(doc);
+        }
+
+        /// .task notes: write the image into the file immediately (when auto save is on).
+        static void PackNow(Doc doc)
+        {
+            if (doc.Path != null && TaskFile.Is(doc.Path) && Workspace.Settings.AutoSave) doc.Save(null, false);
         }
 
         static void Insert(TextEditor ed, string text)
@@ -196,6 +204,7 @@ namespace TaskPad
         {
             var line = CurrentContext.Document.GetLineByOffset(startOffset);
             lineOffset = line.Offset;
+            if (Code.IsCodeLine(CurrentContext.Document, line.LineNumber)) return null;
             var text = CurrentContext.Document.GetText(line);
             int rel = startOffset - line.Offset;
             if (text.IndexOf("![", rel, StringComparison.Ordinal) < 0) return null;

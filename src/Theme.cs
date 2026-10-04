@@ -77,6 +77,7 @@ namespace TaskPad
             Workspace.Settings.Theme = light ? "light" : "dark";
             Workspace.Settings.Save();
             if (Application.Current != null) Styles.Install(Application.Current.Resources);
+            TaskPad.Code.Refresh();
             foreach (Window w in Application.Current.Windows) TaskWindow.ApplyDarkTitleBar(w);
             foreach (var v in Workspace.AllViews)
             {
