@@ -165,7 +165,7 @@ namespace TaskPad
                             var paths = msg.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
                             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                             {
-                                var w = Workspace.LastActive ?? (Workspace.Windows.Count > 0 ? Workspace.Windows[0] : null);
+                                var w = Workspace.LastActive != null && Workspace.LastActive.IsVisible ? Workspace.LastActive : Workspace.Windows.LastOrDefault(x => x.IsVisible);
                                 if (w == null) { w = new TaskWindow(); w.Show(); }
                                 w.ReceiveFromOtherInstance(paths);
                             }));

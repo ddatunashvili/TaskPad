@@ -66,7 +66,7 @@ namespace TaskPad
                 foreach (var w in Workspace.Windows)
                 {
                     var groups = w.Groups.ToList();
-                    if (groups.All(g => g.Tabs.Count == 0)) continue;
+                    if (!w.IsVisible || groups.All(g => g.Tabs.Count == 0)) continue;
                     var rb = w.WindowState == WindowState.Normal ? new Rect(w.Left, w.Top, w.ActualWidth, w.ActualHeight) : w.RestoreBounds;
                     sb.Append(Line("win", F(rb.Left), F(rb.Top), F(rb.Width), F(rb.Height), w.WindowState == WindowState.Maximized ? 1 : 0,
                         w.LayoutSpec(), groups.IndexOf(w.ActiveGroup), w == Workspace.LastActive ? 1 : 0));
@@ -94,6 +94,8 @@ namespace TaskPad
         // ---------------- restore ----------------
 
         /// Recreates the saved windows. Returns false if there was nothing to restore.
+        /// A window is only created when at least one of its tabs can actually be restored; anything that
+        /// goes wrong is logged and never leaves an invisible window behind.
         public static bool Restore()
         {
             if (!Enabled || !File.Exists(File_)) return false;
@@ -102,89 +104,104 @@ namespace TaskPad
             if (lines.Length == 0 || lines[0] != Version) return false;
 
             _restoring = true;
+            var docs = new Dictionary<int, Doc>();
+            TaskWindow focus = null;
             try
             {
-                var docs = new Dictionary<int, Doc>();
-                TaskWindow win = null, focus = null;
-                List<EditorGroup> groups = null;
-                int groupIndex = 0, activeGroup = 0;
-
-                foreach (var raw in lines.Skip(1))
+                var rows = lines.Skip(1).Select(l => l.Split('\t').Select(Uri.UnescapeDataString).ToArray()).ToList();
+                foreach (var p in rows.Where(r => r[0] == "doc"))
                 {
-                    var p = raw.Split('\t').Select(Uri.UnescapeDataString).ToArray();
-                    switch (p[0])
-                    {
-                        case "doc":
-                        {
-                            var doc = LoadDoc(p);
-                            if (doc != null) docs[int.Parse(p[1])] = doc;
-                            break;
-                        }
-                        case "win":
-                        {
-                            FinishWindow(win, groups, activeGroup);
-                            win = new TaskWindow(false)
-                            {
-                                Left = D(p[1], 100), Top = D(p[2], 100),
-                                Width = D(p[3], Workspace.Settings.Width), Height = D(p[4], Workspace.Settings.Height),
-                            };
-                            if (p[5] == "1") win.WindowState = WindowState.Maximized;
-                            groups = win.ApplyLayout(p[6]);
-                            activeGroup = (int)D(p[7], 0);
-                            groupIndex = 0;
-                            if (p.Length > 8 && p[8] == "1") focus = win;
-                            break;
-                        }
-                        case "grp":
-                        {
-                            if (win == null || groupIndex >= groups.Count) break;
-                            var g = groups[groupIndex++];
-                            int active = (int)D(p[1], 0);
-                            var restored = new List<(TabView Tab, int Caret, double Scroll)>();
-                            foreach (var entry in (p.Length > 2 ? p[2] : "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
-                            {
-                                var f = entry.Split(',');
-                                if (!docs.TryGetValue(int.Parse(f[0]), out var doc)) continue;
-                                var tab = new TabView(doc);
-                                g.Insert(tab, g.Tabs.Count, activate: false);
-                                restored.Add((tab, (int)D(f[1], 0), f.Length > 2 ? D(f[2], 0) : 0));
-                            }
-                            if (g.Tabs.Count > 0) g.Activate(g.Tabs[Math.Min(active, g.Tabs.Count - 1)], focus: false);
-                            foreach (var (tab, caret, scroll) in restored)
-                            {
-                                tab.Editor.CaretOffset = Math.Min(caret, tab.Doc.Document.TextLength);
-                                var ed = tab.Editor;
-                                ed.Loaded += (s, e) => ed.ScrollToVerticalOffset(scroll);
-                            }
-                            break;
-                        }
-                    }
+                    var doc = LoadDoc(p);
+                    if (doc != null) docs[int.Parse(p[1])] = doc;
                 }
-                FinishWindow(win, groups, activeGroup);
 
-                // drop docs nobody shows (e.g. missing windows)
-                foreach (var d in docs.Values.Where(d => d.Views.Count == 0).ToList()) d.Dispose();
-                if (Workspace.Windows.Count == 0) return false;
-                Workspace.LastActive = focus ?? Workspace.Windows.Last();
-                return true;
+                // window blocks: a "win" row followed by its "grp" rows
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    if (rows[i][0] != "win") continue;
+                    var w = rows[i];
+                    var grps = new List<string[]>();
+                    for (int j = i + 1; j < rows.Count && rows[j][0] == "grp"; j++) grps.Add(rows[j]);
+                    var groupTabs = grps.Select(g => TabsOf(g, docs)).ToList();
+                    if (groupTabs.All(t => t.Count == 0)) continue;   // nothing to show: don't create a window at all
+
+                    var win = RestoreWindow(w, grps, groupTabs);
+                    if (win != null && w.Length > 8 && w[8] == "1") focus = win;
+                }
             }
-            catch
-            {
-                return Workspace.Windows.Count > 0;
-            }
+            catch (Exception ex) { Log(ex); }
             finally { _restoring = false; }
+
+            // never keep windows that didn't make it on screen
+            foreach (var w in Workspace.Windows.Where(w => !w.IsVisible).ToList()) Workspace.Windows.Remove(w);
+            foreach (var d in docs.Values.Where(d => d.Views.Count == 0).ToList()) d.Dispose();
+            if (Workspace.Windows.Count == 0) return false;
+            Workspace.LastActive = focus != null && focus.IsVisible ? focus : Workspace.Windows.Last();
+            return true;
         }
 
-        static void FinishWindow(TaskWindow w, List<EditorGroup> groups, int active)
+        static List<(Doc Doc, int Caret, double Scroll)> TabsOf(string[] grp, Dictionary<int, Doc> docs)
         {
-            if (w == null) return;
-            // remove groups that ended up empty (file deleted since last time)
-            foreach (var g in groups.Where(g => g.Tabs.Count == 0).ToList())
-                if (w.Groups.Count() > 1) w.RemoveGroup(g);
-            if (w.TabCount == 0) { w.Close(); return; }
-            var live = w.Groups.ToList();
-            w.SetActiveGroup(live[Math.Max(0, Math.Min(active, live.Count - 1))]);
-            w.Show();
+            var list = new List<(Doc, int, double)>();
+            foreach (var entry in (grp.Length > 2 ? grp[2] : "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var f = entry.Split(',');
+                if (int.TryParse(f[0], out int id) && docs.TryGetValue(id, out var doc))
+                    list.Add((doc, (int)D(f.Length > 1 ? f[1] : "0", 0), f.Length > 2 ? D(f[2], 0) : 0));
+            }
+            return list;
+        }
+
+        static TaskWindow RestoreWindow(string[] w, List<string[]> grps, List<List<(Doc Doc, int Caret, double Scroll)>> groupTabs)
+        {
+            var st = Workspace.Settings;
+            double left = D(w[1], double.NaN), top = D(w[2], double.NaN), width = D(w[3], 0), height = D(w[4], 0);
+            if (width < 360 || height < 240) { width = st.Width; height = st.Height; }
+            var win = new TaskWindow(false) { Width = width, Height = height };
+            if (double.IsNaN(left) || double.IsNaN(top) || !OnScreen(left, top)) win.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            else { win.Left = left; win.Top = top; }
+            try
+            {
+                // only keep the layout if every group has tabs; otherwise fall back to one group
+                bool allGroups = groupTabs.All(t => t.Count > 0);
+                var groups = allGroups ? win.ApplyLayout(w[6]) : win.Groups.ToList();
+                if (!allGroups) groupTabs = new List<List<(Doc, int, double)>> { groupTabs.SelectMany(t => t).ToList() };
+                for (int g = 0; g < groups.Count && g < groupTabs.Count; g++)
+                {
+                    int active = allGroups ? (int)D(grps[g][1], 0) : 0;
+                    foreach (var (doc, caret, scroll) in groupTabs[g])
+                    {
+                        var tab = new TabView(doc);
+                        groups[g].Insert(tab, groups[g].Tabs.Count, activate: false);
+                        tab.Editor.CaretOffset = Math.Min(caret, doc.Document.TextLength);
+                        var ed = tab.Editor;
+                        ed.Loaded += (s, e) => ed.ScrollToVerticalOffset(scroll);
+                    }
+                    if (groups[g].Tabs.Count > 0) groups[g].Activate(groups[g].Tabs[Math.Min(active, groups[g].Tabs.Count - 1)], focus: false);
+                }
+                var live = win.Groups.ToList();
+                win.SetActiveGroup(live[Math.Max(0, Math.Min((int)D(w[7], 0), live.Count - 1))]);
+                if (w[5] == "1") win.WindowState = WindowState.Maximized;
+                win.Show();
+                return win;
+            }
+            catch (Exception ex)
+            {
+                Log(ex);
+                foreach (var t in win.Groups.SelectMany(g => g.Tabs).ToList()) t.Detach();
+                Workspace.Windows.Remove(win);
+                return null;
+            }
+        }
+
+        static bool OnScreen(double left, double top) =>
+            left >= SystemParameters.VirtualScreenLeft - 50 && top >= SystemParameters.VirtualScreenTop - 50 &&
+            left < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 100 &&
+            top < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 100;
+
+        static void Log(Exception ex)
+        {
+            try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "TaskPad-error.log"), $"{DateTime.Now} session restore{Environment.NewLine}{ex}{Environment.NewLine}"); } catch { }
         }
 
         static Doc LoadDoc(string[] p)
