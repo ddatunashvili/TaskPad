@@ -37,7 +37,7 @@ namespace TaskPad
             var first = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
             first.Tick += (s, e) => { first.Stop(); Check(silent: true); };
             first.Start();
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromHours(6) };
+            _timer = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
             _timer.Tick += (s, e) => Check(silent: true);
             _timer.Start();
         }
@@ -124,7 +124,7 @@ namespace TaskPad
                     return;
                 }
                 _installed = true;
-                win?.Toast($"Updated to {r.Tag}" + (restartPrompt ? " — restart to use it" : ""), "Restart", Restart, seconds: restartPrompt ? 20 : 30);
+                win?.Toast($"TaskPad updated to {r.Tag} in the background" + (restartPrompt ? " — restart now, or it applies next time you open TaskPad" : ""), "Restart", Restart, seconds: restartPrompt ? 15 : 30);
                 if (!restartPrompt) Restart();
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }

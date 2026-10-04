@@ -26,7 +26,7 @@ namespace TaskPad
         public bool CommentPanel = true;           // comments shown in a panel on the right (off = hover cards)
         public double CommentMarginWidth = 300;
         public string Author = "";                 // name on comments; empty = Windows user name
-        public string AutoUpdate = "ask";          // ask | auto | off
+        public string AutoUpdate = "auto";         // auto (background) | ask | off
         public double Left = double.NaN, Top = double.NaN, Width = 980, Height = 680;
         public bool Maximized;
 
@@ -70,6 +70,8 @@ namespace TaskPad
                 if (map.TryGetValue("commentMarginWidth", out v)) s.CommentMarginWidth = Math.Max(200, D(v, s.CommentMarginWidth));
                 if (map.TryGetValue("author", out v)) s.Author = v;
                 if (map.TryGetValue("autoUpdate", out v) && v.Length > 0) s.AutoUpdate = v;
+                // 1.6.5: background updates became the default; move the old default "ask" over once
+                if (!map.ContainsKey("updateDefaults") && s.AutoUpdate == "ask") s.AutoUpdate = "auto";
                 if (map.TryGetValue("restoreSession", out v)) s.RestoreSession = v != "false";
                 if (map.TryGetValue("leftMargin", out v)) s.LeftMargin = Math.Max(0, D(v, s.LeftMargin));
                 if (map.TryGetValue("indentSize", out v)) s.IndentSize = Math.Max(1, (int)D(v, s.IndentSize));
@@ -112,6 +114,7 @@ namespace TaskPad
                     "commentMarginWidth=" + CommentMarginWidth.ToString(ci),
                     "author=" + Author,
                     "autoUpdate=" + AutoUpdate,
+                    "updateDefaults=2",
                     "restoreSession=" + (RestoreSession ? "true" : "false"),
                     "left=" + Left.ToString(ci),
                     "top=" + Top.ToString(ci),

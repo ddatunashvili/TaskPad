@@ -227,9 +227,10 @@ being asked anything; next time everything is back exactly as you left it. Turn 
 
 ## Updates
 
-TaskPad checks GitHub for a new release at start-up (and every few hours) and shows **Update now**. It downloads the
-new `TaskPad.exe`, verifies its SHA-256 against the release notes, swaps it in place and restarts with your files.
-Turn on `⋯` → **Auto-install updates** to skip the prompt, or set `autoUpdate=off` in `TaskPad.ini`.
+TaskPad updates itself in the background: at start-up and every hour it checks GitHub, downloads a new `TaskPad.exe`,
+verifies its SHA-256 against the release notes and swaps it in place. A small toast offers **Restart**; otherwise the new
+version starts the next time you open TaskPad (your tabs and unsaved text always come back). Prefer to be asked? Untick
+`⋯` → **Auto-install updates** (or `autoUpdate=ask`); `autoUpdate=off` disables checks.
 (Needs write access to the folder the exe is in; otherwise it links to the download page.)
 
 ## Explorer right-click menu
