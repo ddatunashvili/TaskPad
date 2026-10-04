@@ -78,6 +78,10 @@ Every thread becomes a card aligned with its line. Reply in place (Enter to send
 
 <p align="center"><img src="docs/margin-comments.png" alt="Comments in the right margin" width="880"></p>
 
+## Light and dark
+
+Dark by default. `⋯` → **Light theme** switches every window instantly (or `theme=light` in `TaskPad.ini`).
+
 ## Colours and links
 
 Colour codes like `#7C6CF6`, `#fff` or `#22D3EE80` get a live swatch. <kbd>Ctrl</kbd>+click a colour code or a link
@@ -104,12 +108,15 @@ it opens in TaskPad — the installer (or first run) makes TaskPad the default a
 and adds **New → TaskPad note** to Explorer. New notes save as `.task` by default; pick `.txt` in the Save dialog
 for a plain text file. Save an existing `.txt` as `.task` and every image it references is packed in.
 
+`⋯` → **Export as .task (with images)…** writes a self-contained copy of any note. Drop `.txt`, `.task` or
+`.md` files onto the window to open them (PDFs open in your PDF viewer).
+
 Under the hood it is a ZIP archive (`note.txt` + `images/`), so nothing is locked in: rename it to `.zip` to look inside.
 
 ## Images
 
-<kbd>Ctrl</kbd>+<kbd>V</kbd> a screenshot or drop image files. They are saved to `images/` next to your file and
-shown as a small chip (`![](images/…png)` in the file). Hover for a preview, click to open the inspector:
+<kbd>Ctrl</kbd>+<kbd>V</kbd> a screenshot or drop image files. In a `.task` note they are stored inside the file; in a `.txt` note they
+go to `%LOCALAPPDATA%\TaskPad\images` (no folders appear next to your notes). Shown as a small chip (`![](images/…png)` in the file). Hover for a preview, click to open the inspector:
 wheel to zoom at the cursor, drag to pan, double-click for fit / 100 %, pixel coordinates and colour,
 **📌 pin on top** to keep it as a reference while you type.
 
@@ -214,7 +221,7 @@ It is per-user (HKCU), so no admin rights are needed. On Windows 11 the entries 
 `TaskPad.ini` is created next to the exe (portable). Options: `font`, `fontSize`, `wordWrap`,
 `autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`, `commentsMode` (`hover`/`margin`),
 `commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`), `restoreSession`, `autoSave`,
-`markerSpacing` (extra px around task/icon lines and headings; `0` = compact). Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
+`markerSpacing` (extra px around task/icon lines and headings; `0` = compact), `theme` (`dark`/`light`). Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
 for the intended look; it falls back to Cascadia Mono / Consolas.
 
 ## Build

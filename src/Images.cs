@@ -367,8 +367,8 @@ namespace TaskPad
                 });
                 var chip = new Border
                 {
-                    Background = missing ? new SolidColorBrush(Color.FromArgb(0x30, 0xEF, 0x44, 0x44)) : new SolidColorBrush(Color.FromRgb(0x1C, 0x1B, 0x2A)),
-                    BorderBrush = missing ? Theme.BoxCancel : new SolidColorBrush(Color.FromRgb(0x34, 0x30, 0x55)),
+                    Background = missing ? new SolidColorBrush(Color.FromArgb(0x30, 0xEF, 0x44, 0x44)) : Theme.Hover,
+                    BorderBrush = missing ? Theme.BoxCancel : Theme.ChromeBorder,
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(5),
                     Padding = new Thickness(3, 0, 8, 0),

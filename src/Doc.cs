@@ -147,6 +147,21 @@ namespace TaskPad
             catch { }
         }
 
+        /// True for files that are clearly not text (NUL bytes in the first 8 KB, no UTF-16 BOM).
+        public static bool LooksBinary(string path)
+        {
+            try
+            {
+                var buf = new byte[8192];
+                int n;
+                using (var fs = File.OpenRead(path)) n = fs.Read(buf, 0, buf.Length);
+                if (n >= 2 && ((buf[0] == 0xFF && buf[1] == 0xFE) || (buf[0] == 0xFE && buf[1] == 0xFF))) return false;
+                for (int i = 0; i < n; i++) if (buf[i] == 0) return true;
+                return false;
+            }
+            catch { return false; }
+        }
+
         public static string ReadText(string path, out Encoding enc)
         {
             var bytes = File.ReadAllBytes(path);

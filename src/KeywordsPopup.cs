@@ -95,7 +95,7 @@ namespace TaskPad
             popup.Child = new Border
             {
                 Width = width,
-                Background = new SolidColorBrush(Color.FromRgb(0x14, 0x14, 0x18)),
+                Background = Theme.Popup,
                 BorderBrush = Theme.ChromeBorder,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8),
@@ -178,7 +178,7 @@ namespace TaskPad
             var chip = new Border
             {
                 Child = syntax,
-                Background = new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x27)),
+                Background = Theme.Hover,
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(6, 1, 6, 2),
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -212,7 +212,7 @@ namespace TaskPad
                 ToolTip = kw.Mode == Mode.Inline ? "Insert at cursor" : "Apply to current line",
             };
             ToolTipService.SetInitialShowDelay(row, 800);
-            var hover = new SolidColorBrush(Color.FromRgb(0x24, 0x24, 0x2C));
+            var hover = Theme.Hover;
             row.MouseEnter += (s, e) => row.Background = hover;
             row.MouseLeave += (s, e) => row.Background = Brushes.Transparent;
             return row;

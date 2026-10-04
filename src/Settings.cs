@@ -13,6 +13,7 @@ namespace TaskPad
         public bool WordWrap = true;
         public int AutoSaveDelayMs = 1000;
         public bool AutoSave = true;
+        public string Theme = "dark";             // dark | light
         public double MarkerSpacing = 6;          // extra px around task / icon lines (headings scale from it)
         public int IndentSize = 2;
         public double LeftMargin = 28;
@@ -51,6 +52,7 @@ namespace TaskPad
                 if (map.TryGetValue("fontSize", out v)) s.FontSize = D(v, s.FontSize);
                 if (map.TryGetValue("wordWrap", out v)) s.WordWrap = v == "true";
                 if (map.TryGetValue("markerSpacing", out v)) s.MarkerSpacing = Math.Max(0, D(v, s.MarkerSpacing));
+                if (map.TryGetValue("theme", out v) && v.Length > 0) s.Theme = v;
                 if (map.TryGetValue("autoSave", out v)) s.AutoSave = v != "false";
                 if (map.TryGetValue("autoSaveDelayMs", out v)) s.AutoSaveDelayMs = (int)D(v, s.AutoSaveDelayMs);
                 if (map.TryGetValue("imagePreviewHeight", out v)) s.ImagePreviewHeight = Math.Max(0, D(v, s.ImagePreviewHeight));
@@ -86,6 +88,7 @@ namespace TaskPad
                     "fontSize=" + FontSize.ToString(ci),
                     "wordWrap=" + (WordWrap ? "true" : "false"),
                     "autoSave=" + (AutoSave ? "true" : "false"),
+                    "theme=" + Theme,
                     "markerSpacing=" + MarkerSpacing.ToString(ci),
                     "autoSaveDelayMs=" + AutoSaveDelayMs,
                     "indentSize=" + IndentSize,

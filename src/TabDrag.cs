@@ -407,7 +407,7 @@ namespace TaskPad
                 IsHitTestVisible = false,
                 Content = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromArgb(0xF0, 0x14, 0x14, 0x18)),
+                    Background = Theme.Popup,
                     BorderBrush = Theme.Accent,
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(8),

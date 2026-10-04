@@ -147,7 +147,7 @@ namespace TaskPad
 
         static TextDecorationCollection MakeUnderline()
         {
-            var pen = new Pen(Theme.Todo, 1) { DashStyle = new DashStyle(new double[] { 2, 2 }, 0) };
+            var pen = new Pen(new SolidColorBrush(Color.FromRgb(0xF5, 0xB7, 0x0A)), 1) { DashStyle = new DashStyle(new double[] { 2, 2 }, 0) };
             pen.Freeze();
             var c = new TextDecorationCollection { new TextDecoration(TextDecorationLocation.Underline, pen, 1, TextDecorationUnit.FontRecommended, TextDecorationUnit.Pixel) };
             c.Freeze();
@@ -253,7 +253,7 @@ namespace TaskPad
         {
             _ed = ed;
             _anchor = ed.Document.CreateAnchor(markupStart);
-            Background = new SolidColorBrush(Color.FromRgb(0x17, 0x17, 0x1D));
+            Background = Theme.Popup;
             BorderThickness = new Thickness(1);
             BorderBrush = Theme.ChromeBorder;
             CornerRadius = new CornerRadius(7);
@@ -427,7 +427,7 @@ namespace TaskPad
                 TextWrapping = TextWrapping.Wrap,
                 MaxHeight = 160,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x0E, 0x11)),
+                Background = Theme.Input,
                 Foreground = Theme.Fg,
                 CaretBrush = Theme.Accent,
                 SelectionBrush = Theme.Accent,
@@ -462,7 +462,7 @@ namespace TaskPad
                 ToolTip = tip,
                 Child = new TextBlock { Text = text, Foreground = Theme.FgDim, FontFamily = new FontFamily("Segoe UI Symbol, Segoe UI"), FontSize = 11.5 },
             };
-            var hover = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x34));
+            var hover = Theme.Hover;
             b.MouseEnter += (s, e) => b.Background = hover;
             b.MouseLeave += (s, e) => b.Background = Brushes.Transparent;
             b.MouseLeftButtonDown += (s, e) => e.Handled = true;
@@ -523,7 +523,7 @@ namespace TaskPad
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x0E, 0x11)),
+                Background = Theme.Input,
                 Foreground = Theme.Fg,
                 CaretBrush = Theme.Accent,
                 SelectionBrush = Theme.Accent,
@@ -703,7 +703,7 @@ namespace TaskPad
         {
             var b = new Border
             {
-                Background = new SolidColorBrush(Color.FromRgb(0x17, 0x17, 0x1D)),
+                Background = Theme.Popup,
                 BorderThickness = new Thickness(3, 1, 1, 1),
                 CornerRadius = new CornerRadius(6),
                 Child = inner,
@@ -723,13 +723,13 @@ namespace TaskPad
                 Padding = new Thickness(12, 4, 12, 5),
                 Margin = new Thickness(6, 0, 0, 0),
                 CornerRadius = new CornerRadius(5),
-                Background = text == "Comment" ? new SolidColorBrush(Color.FromArgb(0x40, 0x7C, 0x6C, 0xF6)) : Brushes.Transparent,
+                Background = text == "Comment" ? Theme.AccentSoft : Brushes.Transparent,
                 Cursor = Cursors.Hand,
                 ToolTip = tip,
                 Child = new TextBlock { Text = text, Foreground = fg, FontFamily = new FontFamily("Segoe UI"), FontSize = 12.5 },
             };
             var bg = b.Background;
-            var hover = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x34));
+            var hover = Theme.Hover;
             b.MouseEnter += (s, e) => b.Background = hover;
             b.MouseLeave += (s, e) => b.Background = bg;
             b.MouseLeftButtonUp += (s, e) => click();
@@ -741,7 +741,7 @@ namespace TaskPad
             var t = new ControlTemplate(typeof(Thumb));
             var f = new FrameworkElementFactory(typeof(TextBlock));
             f.SetValue(TextBlock.TextProperty, "◢");
-            f.SetValue(TextBlock.ForegroundProperty, Theme.FgDim);
+            f.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Theme.FgDim.Color)); // templates freeze their values: use a copy
             f.SetValue(TextBlock.FontSizeProperty, 11.0);
             f.SetValue(TextBlock.BackgroundProperty, Brushes.Transparent);
             t.VisualTree = f;
@@ -762,7 +762,7 @@ namespace TaskPad
         {
             _ed = ed;
             Width = Workspace.Settings.CommentMarginWidth;
-            Background = new SolidColorBrush(Color.FromRgb(0x0B, 0x0B, 0x0E));
+            Background = Theme.Chrome;
             BorderBrush = Theme.ChromeBorder;
             BorderThickness = new Thickness(1, 0, 0, 0);
             Child = _canvas;

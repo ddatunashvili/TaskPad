@@ -105,8 +105,9 @@ namespace TaskPad
                 try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "TaskPad-error.log"), $"{DateTime.Now}\r\n{e.Exception}\r\n"); } catch { }
                 e.Handled = true;
             };
-            Styles.Install(app.Resources);
             Workspace.Settings = Settings.Load();
+            Theme.Apply(Workspace.Settings.Theme == "light");
+            Styles.Install(app.Resources);
             SmartEditing.IndentSize = () => Workspace.Settings.IndentSize;
 
             // bring back the last session (windows, splits, tabs, unsaved text), then add any files passed in

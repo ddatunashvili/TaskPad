@@ -86,6 +86,20 @@ namespace TaskPad
             if (Doc.Views.Count == 0) Doc.Dispose();
         }
 
+        /// Re-applies editor colours after a theme switch.
+        public void ApplyTheme()
+        {
+            var ta = Editor.TextArea;
+            Editor.Background = Theme.F(Theme.Bg);
+            Editor.Foreground = Theme.F(Theme.Fg);
+            Editor.LineNumbersForeground = Theme.F(Theme.LineNo);
+            ta.SelectionBrush = Theme.F(Theme.Selection);
+            ta.Caret.CaretBrush = Theme.F(Theme.Accent);
+            ta.TextView.CurrentLineBackground = Theme.F(Theme.CurrentLine);
+            ta.TextView.LinkTextForegroundBrush = Theme.F(Theme.Link);
+            ta.TextView.Redraw();
+        }
+
         public void Refresh()
         {
             bool active = Group != null && Group.Active == this;
@@ -113,11 +127,11 @@ namespace TaskPad
                 Document = doc.Document,
                 FontFamily = new FontFamily(st.FontFamily),
                 FontSize = st.FontSize,
-                Background = Theme.Bg,
-                Foreground = Theme.Fg,
+                Background = Theme.F(Theme.Bg),
+                Foreground = Theme.F(Theme.Fg),
                 WordWrap = st.WordWrap,
                 ShowLineNumbers = true,
-                LineNumbersForeground = Theme.LineNo,
+                LineNumbersForeground = Theme.F(Theme.LineNo),
                 Padding = new Thickness(6, 8, 6, 0),
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -137,14 +151,14 @@ namespace TaskPad
             o.WordWrapIndentation = 0;
 
             var ta = ed.TextArea;
-            ta.SelectionBrush = Theme.Selection;
+            ta.SelectionBrush = Theme.F(Theme.Selection);
             ta.SelectionForeground = null;
             ta.SelectionBorder = null;
             ta.SelectionCornerRadius = 3;
-            ta.Caret.CaretBrush = Theme.Accent;
-            ta.TextView.CurrentLineBackground = Theme.CurrentLine;
+            ta.Caret.CaretBrush = Theme.F(Theme.Accent);
+            ta.TextView.CurrentLineBackground = Theme.F(Theme.CurrentLine);
             ta.TextView.CurrentLineBorder = new Pen(Brushes.Transparent, 0);
-            ta.TextView.LinkTextForegroundBrush = Theme.Link;
+            ta.TextView.LinkTextForegroundBrush = Theme.F(Theme.Link);
             ta.TextView.LinkTextUnderline = true;
 
             // softer gutter: hide the dotted separator, add breathing room

@@ -19,10 +19,10 @@ namespace TaskPad
       <Border Background='Transparent'>
         <Track x:Name='PART_Track' Orientation='{{TemplateBinding Orientation}}'>
           <Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType='Thumb'>
-            <Border x:Name='T' Background='#2A2A33' CornerRadius='4' Margin='3'/>
+            <Border x:Name='T' Background='{H(Theme.Hover)}' CornerRadius='4' Margin='3'/>
             <ControlTemplate.Triggers>
-              <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='T' Property='Background' Value='#3C3C48'/></Trigger>
-              <Trigger Property='IsDragging' Value='True'><Setter TargetName='T' Property='Background' Value='#4A4A5A'/></Trigger>
+              <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='T' Property='Background' Value='{H(Theme.FgFaint)}'/></Trigger>
+              <Trigger Property='IsDragging' Value='True'><Setter TargetName='T' Property='Background' Value='{H(Theme.FgDim)}'/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
         </Track>
@@ -41,12 +41,12 @@ namespace TaskPad
             r[typeof(ContextMenu)] = Parse($@"
 <Style {Ns} TargetType='ContextMenu'>
   <Setter Property='HasDropShadow' Value='False'/>
-  <Setter Property='Foreground' Value='#D4D4D8'/>
+  <Setter Property='Foreground' Value='{H(Theme.Fg)}'/>
   <Setter Property='FontFamily' Value='Segoe UI'/>
   <Setter Property='FontSize' Value='12.5'/>
   <Setter Property='Template'><Setter.Value>
     <ControlTemplate TargetType='ContextMenu'>
-      <Border Background='#141418' BorderBrush='#2A2A33' BorderThickness='1' CornerRadius='8' Padding='4' MinWidth='240'>
+      <Border Background='{H(Theme.Popup)}' BorderBrush='{H(Theme.ChromeBorder)}' BorderThickness='1' CornerRadius='8' Padding='4' MinWidth='240'>
         <StackPanel IsItemsHost='True'/>
       </Border>
     </ControlTemplate>
@@ -55,19 +55,19 @@ namespace TaskPad
 
             r[typeof(MenuItem)] = Parse($@"
 <Style {Ns} TargetType='MenuItem'>
-  <Setter Property='Foreground' Value='#D4D4D8'/>
+  <Setter Property='Foreground' Value='{H(Theme.Fg)}'/>
   <Setter Property='Template'><Setter.Value>
     <ControlTemplate TargetType='MenuItem'>
       <Border x:Name='Bd' Background='Transparent' Padding='12,6,14,6' CornerRadius='5'>
         <Grid>
           <Grid.ColumnDefinitions><ColumnDefinition Width='18'/><ColumnDefinition Width='*'/><ColumnDefinition Width='Auto'/></Grid.ColumnDefinitions>
-          <TextBlock x:Name='Chk' Text='✓' Foreground='#7C6CF6' Visibility='Hidden' FontWeight='Bold'/>
+          <TextBlock x:Name='Chk' Text='✓' Foreground='{H(Theme.Accent)}' Visibility='Hidden' FontWeight='Bold'/>
           <ContentPresenter Grid.Column='1' ContentSource='Header' RecognizesAccessKey='True'/>
-          <TextBlock Grid.Column='2' Text='{{TemplateBinding InputGestureText}}' Margin='28,0,0,0' Foreground='#71717A'/>
+          <TextBlock Grid.Column='2' Text='{{TemplateBinding InputGestureText}}' Margin='28,0,0,0' Foreground='{H(Theme.FgDim)}'/>
         </Grid>
       </Border>
       <ControlTemplate.Triggers>
-        <Trigger Property='IsHighlighted' Value='True'><Setter TargetName='Bd' Property='Background' Value='#24242C'/></Trigger>
+        <Trigger Property='IsHighlighted' Value='True'><Setter TargetName='Bd' Property='Background' Value='{H(Theme.Hover)}'/></Trigger>
         <Trigger Property='IsChecked' Value='True'><Setter TargetName='Chk' Property='Visibility' Value='Visible'/></Trigger>
         <Trigger Property='IsEnabled' Value='False'><Setter Property='Opacity' Value='0.4'/></Trigger>
       </ControlTemplate.Triggers>
@@ -78,7 +78,7 @@ namespace TaskPad
             r[typeof(Separator)] = Parse($@"
 <Style {Ns} TargetType='Separator'>
   <Setter Property='Template'><Setter.Value>
-    <ControlTemplate TargetType='Separator'><Border Height='1' Margin='8,4' Background='#24242C'/></ControlTemplate>
+    <ControlTemplate TargetType='Separator'><Border Height='1' Margin='8,4' Background='{H(Theme.Hover)}'/></ControlTemplate>
   </Setter.Value></Setter>
 </Style>");
 
@@ -89,16 +89,17 @@ namespace TaskPad
 <Style {Ns} TargetType='ToolTip'>
   <Setter Property='Template'><Setter.Value>
     <ControlTemplate TargetType='ToolTip'>
-      <Border Background='#1A1A20' BorderBrush='#2A2A33' BorderThickness='1' CornerRadius='5' Padding='8,4'>
-        <ContentPresenter TextElement.Foreground='#D4D4D8' TextElement.FontFamily='Segoe UI' TextElement.FontSize='12'/>
+      <Border Background='{H(Theme.Popup)}' BorderBrush='{H(Theme.ChromeBorder)}' BorderThickness='1' CornerRadius='5' Padding='8,4'>
+        <ContentPresenter TextElement.Foreground='{H(Theme.Fg)}' TextElement.FontFamily='Segoe UI' TextElement.FontSize='12'/>
       </Border>
     </ControlTemplate>
   </Setter.Value></Setter>
 </Style>");
 
-            r[SystemColors.ControlBrushKey] = Theme.Bg;
+            r[SystemColors.ControlBrushKey] = new System.Windows.Media.SolidColorBrush(Theme.Bg.Color); // resources get frozen: use a copy
         }
 
         static object Parse(string xaml) => XamlReader.Parse(xaml);
+        static string H(System.Windows.Media.SolidColorBrush b) => b.Color.ToString();
     }
 }

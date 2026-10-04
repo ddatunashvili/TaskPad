@@ -60,7 +60,7 @@ namespace TaskPad
                 PopupAnimation = PopupAnimation.Fade,
                 Child = new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(0x17, 0x17, 0x1D)),
+                    Background = Theme.Popup,
                     BorderBrush = Theme.ChromeBorder,
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(8),
@@ -146,7 +146,7 @@ namespace TaskPad
             content.HorizontalAlignment = HorizontalAlignment.Center;
             content.VerticalAlignment = VerticalAlignment.Center;
 
-            var hover = new SolidColorBrush(Color.FromRgb(0x26, 0x26, 0x30));
+            var hover = Theme.Hover;
             var b = new Border
             {
                 Width = 32, Height = 30,
@@ -176,7 +176,7 @@ namespace TaskPad
             var sp = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 10, 0) };
             sp.Children.Add(new TextBlock { Text = "💬", FontFamily = new FontFamily("Segoe UI Emoji"), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
             sp.Children.Add(new TextBlock { Text = "Comment", Foreground = Theme.Todo, FontFamily = new FontFamily("Segoe UI"), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center });
-            var hover = new SolidColorBrush(Color.FromRgb(0x26, 0x26, 0x30));
+            var hover = Theme.Hover;
             var b = new Border { Height = 30, CornerRadius = new CornerRadius(5), Background = Brushes.Transparent, Child = sp, Cursor = Cursors.Hand, ToolTip = "Add a comment to the selection (Ctrl+M)" };
             b.MouseEnter += (s, e) => b.Background = hover;
             b.MouseLeave += (s, e) => b.Background = Brushes.Transparent;

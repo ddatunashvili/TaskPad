@@ -306,9 +306,9 @@ namespace TaskPad
                 var b = new Border
                 {
                     Padding = new Thickness(18, 7, 18, 8), Margin = new Thickness(8, 0, 0, 0), CornerRadius = new CornerRadius(6),
-                    Background = primary ? Theme.Accent : new SolidColorBrush(Color.FromRgb(0x22, 0x22, 0x2A)),
+                    Background = primary ? Theme.Accent : Theme.Hover,
                     Cursor = Cursors.Hand,
-                    Child = new TextBlock { Text = text, Foreground = Brushes.White, FontSize = 13, FontWeight = primary ? FontWeights.SemiBold : FontWeights.Normal },
+                    Child = new TextBlock { Text = text, Foreground = primary ? Brushes.White : Theme.Fg, FontSize = 13, FontWeight = primary ? FontWeights.SemiBold : FontWeights.Normal },
                 };
                 var bg = b.Background;
                 b.MouseEnter += (s, e) => b.Opacity = 0.88;

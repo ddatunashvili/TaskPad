@@ -36,7 +36,7 @@ namespace TaskPad
                 var headBrush = info.Heading <= 2 ? Theme.Heading : info.Heading <= 4 ? Theme.Section : Theme.Fg;
                 ChangeLinePart(o + info.Indent, end, el =>
                 {
-                    el.TextRunProperties.SetForegroundBrush(headBrush);
+                    el.TextRunProperties.SetForegroundBrush(Theme.F(headBrush));
                     el.TextRunProperties.SetFontRenderingEmSize(el.TextRunProperties.FontRenderingEmSize * scale);
                     SetStyle(el, FontWeights.Bold, FontStyles.Normal);
                 });
@@ -51,14 +51,14 @@ namespace TaskPad
             if (info.NumberStart >= 0)
                 ChangeLinePart(o + info.NumberStart, o + info.NumberStart + info.NumberLen, el =>
                 {
-                    el.TextRunProperties.SetForegroundBrush(Theme.Accent);
+                    el.TextRunProperties.SetForegroundBrush(Theme.F(Theme.Accent));
                     SetStyle(el, FontWeights.Bold, FontStyles.Normal);
                 });
 
             if (info.Section)
                 ChangeLinePart(o + info.Indent, end, el =>
                 {
-                    el.TextRunProperties.SetForegroundBrush(Theme.Section);
+                    el.TextRunProperties.SetForegroundBrush(Theme.F(Theme.Section));
                     SetStyle(el, FontWeights.Bold, FontStyles.Normal);
                 });
 
@@ -70,7 +70,7 @@ namespace TaskPad
                 var style = info.Tag == Tag.Question ? FontStyles.Italic : FontStyles.Normal;
                 ChangeLinePart(o + info.ContentStart, end, el =>
                 {
-                    el.TextRunProperties.SetForegroundBrush(brush);
+                    el.TextRunProperties.SetForegroundBrush(Theme.F(brush));
                     SetStyle(el, weight, style);
                 });
             }
@@ -80,7 +80,7 @@ namespace TaskPad
                 if (info.ContentStart < text.Length)
                     ChangeLinePart(o + info.ContentStart, end, el =>
                     {
-                        el.TextRunProperties.SetForegroundBrush(Theme.Done);
+                        el.TextRunProperties.SetForegroundBrush(Theme.F(Theme.Done));
                         el.TextRunProperties.SetTextDecorations(TextDecorations.Strikethrough);
                     });
                 return;
@@ -104,7 +104,7 @@ namespace TaskPad
 
         void Paint(int start, int end, Brush b)
         {
-            if (end > start) ChangeLinePart(start, end, el => el.TextRunProperties.SetForegroundBrush(b));
+            if (end > start) ChangeLinePart(start, end, el => el.TextRunProperties.SetForegroundBrush(Theme.F(b)));
         }
 
         static void SetStyle(VisualLineElement el, FontWeight w, FontStyle s)

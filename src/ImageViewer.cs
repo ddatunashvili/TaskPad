@@ -227,7 +227,7 @@ namespace TaskPad
         void TogglePin()
         {
             Topmost = !Topmost;
-            _pinButton.Background = Topmost ? new SolidColorBrush(Color.FromArgb(0x50, 0x7C, 0x6C, 0xF6)) : Brushes.Transparent;
+            _pinButton.Background = Topmost ? Theme.AccentSoft : Brushes.Transparent;
             _pinButton.ToolTip = Topmost ? "Pinned on top (P to unpin)" : "Pin on top — keep as reference (P)";
         }
 
@@ -255,7 +255,7 @@ namespace TaskPad
                 Background = Brushes.Transparent, Child = tb, ToolTip = tip, Cursor = Cursors.Hand,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            var hover = new SolidColorBrush(Color.FromRgb(0x24, 0x24, 0x2C));
+            var hover = Theme.Hover;
             b.MouseEnter += (s, e) => { if (b != _pinButton || !Topmost) b.Background = hover; };
             b.MouseLeave += (s, e) => { if (b != _pinButton || !Topmost) b.Background = Brushes.Transparent; };
             b.MouseLeftButtonUp += (s, e) => click();

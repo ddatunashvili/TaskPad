@@ -1,52 +1,89 @@
+using System.Linq;
+using System.Windows;
 using System.Windows.Media;
 
 namespace TaskPad
 {
+    /// Colours. Brushes are shared instances whose Color is swapped in place, so switching
+    /// dark / light updates every open window live.
     public static class Theme
     {
+        public static bool IsLight { get; private set; }
+
         public static readonly SolidColorBrush
-            Bg = B("#0E0E11"),
-            Chrome = B("#09090B"),
-            ChromeBorder = B("#1C1C22"),
-            Fg = B("#D4D4D8"),
-            FgDim = B("#71717A"),
-            FgFaint = B("#3F3F46"),
-            LineNo = B("#3F3F4A"),
-            CurrentLine = B("#16161C"),
-            Selection = B("#553F3FA8"),
-            Accent = B("#7C6CF6"),
-            Heading = B("#EDE9FE"),
-            Section = B("#E4E4E7"),
-            Done = B("#5B5B66"),
+            Bg = new SolidColorBrush(), Chrome = new SolidColorBrush(), ChromeBorder = new SolidColorBrush(),
+            Fg = new SolidColorBrush(), FgDim = new SolidColorBrush(), FgFaint = new SolidColorBrush(),
+            LineNo = new SolidColorBrush(), CurrentLine = new SolidColorBrush(), Selection = new SolidColorBrush(),
+            Accent = new SolidColorBrush(), Heading = new SolidColorBrush(), Section = new SolidColorBrush(), Done = new SolidColorBrush(),
+            Popup = new SolidColorBrush(), Hover = new SolidColorBrush(), Input = new SolidColorBrush(), AccentSoft = new SolidColorBrush(),
 
             // better-comments palette
-            Bang = B("#FF5C5C"),
-            Slash = B("#4ADE80"),
-            Star = B("#34D399"),
-            Question = B("#A78BFA"),
-            Todo = B("#FBBF24"),
-            Arrow = B("#C084FC"),
-            Back = B("#22D3EE"),
-            Dash = B("#94A3B8"),
+            Bang = new SolidColorBrush(), Slash = new SolidColorBrush(), Star = new SolidColorBrush(), Question = new SolidColorBrush(),
+            Todo = new SolidColorBrush(), Arrow = new SolidColorBrush(), Back = new SolidColorBrush(), Dash = new SolidColorBrush(),
 
             // inline tokens
-            Mention = B("#FBBF24"),
-            HashTag = B("#22D3EE"),
-            Date = B("#60A5FA"),
-            Code = B("#FDBA74"),
-            Link = B("#60A5FA"),
+            Mention = new SolidColorBrush(), HashTag = new SolidColorBrush(), Date = new SolidColorBrush(), Code = new SolidColorBrush(), Link = new SolidColorBrush(),
 
             // checkbox states
-            BoxOpen = B("#6B6B78"),
-            BoxDone = B("#7C6CF6"),
-            BoxDoing = B("#FBBF24"),
-            BoxCancel = B("#EF4444");
+            BoxOpen = new SolidColorBrush(), BoxDone = new SolidColorBrush(), BoxDoing = new SolidColorBrush(), BoxCancel = new SolidColorBrush();
 
-        static SolidColorBrush B(string hex)
+        static Theme() => Apply(false);
+
+        public static void Apply(bool light)
         {
-            var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
-            b.Freeze();
-            return b;
+            IsLight = light;
+            if (!light)
+            {
+                Set(Bg, "#0E0E11"); Set(Chrome, "#09090B"); Set(ChromeBorder, "#1C1C22");
+                Set(Fg, "#D4D4D8"); Set(FgDim, "#71717A"); Set(FgFaint, "#3F3F46");
+                Set(LineNo, "#3F3F4A"); Set(CurrentLine, "#16161C"); Set(Selection, "#553F3FA8");
+                Set(Accent, "#7C6CF6"); Set(Heading, "#EDE9FE"); Set(Section, "#E4E4E7"); Set(Done, "#5B5B66");
+                Set(Popup, "#17171D"); Set(Hover, "#26262F"); Set(Input, "#0E0E11"); Set(AccentSoft, "#407C6CF6");
+                Set(Bang, "#FF5C5C"); Set(Slash, "#4ADE80"); Set(Star, "#34D399"); Set(Question, "#A78BFA");
+                Set(Todo, "#FBBF24"); Set(Arrow, "#C084FC"); Set(Back, "#22D3EE"); Set(Dash, "#94A3B8");
+                Set(Mention, "#FBBF24"); Set(HashTag, "#22D3EE"); Set(Date, "#60A5FA"); Set(Code, "#FDBA74"); Set(Link, "#60A5FA");
+                Set(BoxOpen, "#6B6B78"); Set(BoxDone, "#7C6CF6"); Set(BoxDoing, "#FBBF24"); Set(BoxCancel, "#EF4444");
+            }
+            else
+            {
+                Set(Bg, "#FFFFFF"); Set(Chrome, "#F3F3F6"); Set(ChromeBorder, "#E2E2E8");
+                Set(Fg, "#1F2328"); Set(FgDim, "#6E6E7A"); Set(FgFaint, "#B4B4BF");
+                Set(LineNo, "#A3A3AE"); Set(CurrentLine, "#F4F4F8"); Set(Selection, "#406D5DF0");
+                Set(Accent, "#6D5DF0"); Set(Heading, "#1B1534"); Set(Section, "#26262E"); Set(Done, "#9B9BA6");
+                Set(Popup, "#FFFFFF"); Set(Hover, "#EDEDF3"); Set(Input, "#FAFAFC"); Set(AccentSoft, "#306D5DF0");
+                Set(Bang, "#D92D33"); Set(Slash, "#16A34A"); Set(Star, "#059669"); Set(Question, "#7C3AED");
+                Set(Todo, "#C2860A"); Set(Arrow, "#9333EA"); Set(Back, "#0891B2"); Set(Dash, "#64748B");
+                Set(Mention, "#B7791F"); Set(HashTag, "#0E7490"); Set(Date, "#2563EB"); Set(Code, "#C2410C"); Set(Link, "#2563EB");
+                Set(BoxOpen, "#9A9AA6"); Set(BoxDone, "#6D5DF0"); Set(BoxDoing, "#D99A00"); Set(BoxCancel, "#DC2626");
+            }
+        }
+
+        static readonly System.Collections.Generic.Dictionary<Color, SolidColorBrush> Frozen = new System.Collections.Generic.Dictionary<Color, SolidColorBrush>();
+
+        /// Frozen copy for the text editor (AvalonEdit freezes brushes it is given, which would lock the shared ones).
+        public static Brush F(Brush b)
+        {
+            if (!(b is SolidColorBrush s) || s.IsFrozen && !ReferenceEquals(s, Bg)) return b;
+            if (!Frozen.TryGetValue(s.Color, out var f)) { f = new SolidColorBrush(s.Color); f.Freeze(); Frozen[s.Color] = f; }
+            return f;
+        }
+
+        static void Set(SolidColorBrush b, string hex) => b.Color = (Color)ColorConverter.ConvertFromString(hex);
+
+        /// Switches theme for the whole app: brushes, menu/scrollbar styles, title bars and editors.
+        public static void Switch(bool light)
+        {
+            Apply(light);
+            Workspace.Settings.Theme = light ? "light" : "dark";
+            Workspace.Settings.Save();
+            if (Application.Current != null) Styles.Install(Application.Current.Resources);
+            foreach (Window w in Application.Current.Windows) TaskWindow.ApplyDarkTitleBar(w);
+            foreach (var v in Workspace.AllViews)
+            {
+                v.ApplyTheme();
+                v.Refresh();
+            }
+            foreach (var w in Workspace.Windows) foreach (var g in w.Groups) g.RefreshHeaders();
         }
     }
 }

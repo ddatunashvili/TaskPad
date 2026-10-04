@@ -36,8 +36,8 @@ namespace TaskPad
             Margin = new Thickness(0, 0, 0, 18),
             Padding = new Thickness(12, 7, 8, 7),
             CornerRadius = new CornerRadius(8),
-            Background = new SolidColorBrush(Color.FromArgb(0xF2, 0x1C, 0x1C, 0x24)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x40)),
+            Background = Theme.Popup,
+            BorderBrush = Theme.ChromeBorder,
             BorderThickness = new Thickness(1),
             Visibility = Visibility.Collapsed,
         };
@@ -102,7 +102,16 @@ namespace TaskPad
                         Images.InsertFiles(tab.Editor, tab.Doc, images);
                         tab.Group.Activate(tab);
                     }
-                    foreach (var f in files.Where(f => File.Exists(f) && !Images.IsImageFile(f))) OpenFile(f);
+                    foreach (var f in files.Where(f => File.Exists(f) && !Images.IsImageFile(f)))
+                    {
+                        if (Path.GetExtension(f).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try { Process.Start(new ProcessStartInfo(f) { UseShellExecute = true }); } catch { }
+                            Toast("Opened " + Path.GetFileName(f) + " in your PDF viewer");
+                        }
+                        else if (Doc.LooksBinary(f) && !TaskFile.Is(f)) Toast("Can't open " + Path.GetFileName(f) + " — not a text file");
+                        else OpenFile(f);
+                    }
                     e.Handled = true;
                 }
             };
@@ -473,7 +482,7 @@ namespace TaskPad
                 var b = new Border
                 {
                     Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(10, 3, 10, 4), CornerRadius = new CornerRadius(5),
-                    Background = new SolidColorBrush(Color.FromArgb(0x40, 0x7C, 0x6C, 0xF6)), Cursor = Cursors.Hand,
+                    Background = Theme.AccentSoft, Cursor = Cursors.Hand,
                     Child = new TextBlock { Text = actionText, Foreground = Theme.Fg, FontFamily = new FontFamily("Segoe UI"), FontSize = 12.5 },
                 };
                 b.MouseLeftButtonUp += (s, e) => { _toast.Visibility = Visibility.Collapsed; action?.Invoke(); };
@@ -557,6 +566,7 @@ namespace TaskPad
             Item("Export to PDF…", "Ctrl+P", () => PdfExport.Run(this, tab?.Doc)).IsEnabled = tab != null;
             Item("Export as Markdown…", ".md", () => MarkdownIO.ExportMarkdown(this, tab?.Doc)).IsEnabled = tab != null;
             Item("Export as plain text…", ".txt", () => MarkdownIO.ExportText(this, tab?.Doc)).IsEnabled = tab != null;
+            Item("Export as .task (with images)…", ".task", () => TaskFile.ExportCopy(this, tab?.Doc)).IsEnabled = tab != null;
             Item("Import Markdown…", ".md", () => MarkdownIO.Import(this));
             m.Items.Add(new Separator());
             Item("Split right", "Ctrl+\\", () => SplitActive(g, Dock.Right));
@@ -570,6 +580,7 @@ namespace TaskPad
                 if (Workspace.Settings.AutoSave) foreach (var d in Workspace.Docs.Where(d => d.Dirty && d.Path != null).ToList()) d.Save(this, false);
                 Toast(Workspace.Settings.AutoSave ? "Auto save on" : "Auto save off — Ctrl+S to save");
             }, Workspace.Settings.AutoSave);
+            Item("Light theme", null, () => Theme.Switch(!Theme.IsLight), Theme.IsLight);
             Item("Word wrap", "Alt+Z", Workspace.ToggleWrap, Workspace.Settings.WordWrap);
             Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
             Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
@@ -736,8 +747,8 @@ namespace TaskPad
             try
             {
                 var hwnd = new WindowInteropHelper(window).Handle;
-                int on = 1;
-                DwmSetWindowAttribute(hwnd, 20, ref on, 4);          // immersive dark mode
+                int on = Theme.IsLight ? 0 : 1;
+                DwmSetWindowAttribute(hwnd, 20, ref on, 4);          // immersive dark mode (off in light theme)
                 var c = Theme.Chrome.Color;
                 int bgr = c.R | (c.G << 8) | (c.B << 16);
                 DwmSetWindowAttribute(hwnd, 35, ref bgr, 4);         // caption color (Win11)

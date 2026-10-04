@@ -59,6 +59,55 @@ namespace TaskPad
             return text;
         }
 
+        /// "Export as .task": writes a self-contained copy (note + every image it references);
+        /// the open note itself is not changed.
+        public static void ExportCopy(TaskWindow w, Doc doc)
+        {
+            if (doc == null) return;
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "TaskPad note with images (*.task)|*.task",
+                FileName = Path.GetFileNameWithoutExtension(doc.Name) + Ext,
+                InitialDirectory = doc.Path != null ? Path.GetDirectoryName(doc.Path) : Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            };
+            if (dlg.ShowDialog(w) != true) return;
+            var target = dlg.FileName;
+            if (doc.Path != null && string.Equals(Path.GetFullPath(target), Path.GetFullPath(doc.Path), StringComparison.OrdinalIgnoreCase))
+            { w.Toast("That's the note itself — just save it"); return; }
+            try
+            {
+                var text = doc.Document.Text;
+                var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);   // entry name -> source file
+                var sb = new StringBuilder();
+                int last = 0;
+                foreach (Match m in Images.Ref.Matches(text))
+                {
+                    var src = Images.Resolve(doc, m.Groups[2].Value);
+                    if (src == null || !File.Exists(src)) continue;
+                    var name = "images/" + Path.GetFileName(src);
+                    for (int i = 2; files.TryGetValue(name, out var existing) && !string.Equals(existing, src, StringComparison.OrdinalIgnoreCase); i++)
+                        name = "images/" + Path.GetFileNameWithoutExtension(src) + "-" + i + Path.GetExtension(src);
+                    files[name] = src;
+                    var g = m.Groups[2];
+                    sb.Append(text, last, g.Index - last).Append(name);
+                    last = g.Index + g.Length;
+                }
+                sb.Append(text, last, text.Length - last);
+
+                var tmp = target + ".saving";
+                using (var fs = new FileStream(tmp, FileMode.Create))
+                using (var zip = new ZipArchive(fs, ZipArchiveMode.Create))
+                {
+                    using (var sw = new StreamWriter(zip.CreateEntry("taskpad", CompressionLevel.NoCompression).Open())) sw.Write("1");
+                    using (var sw = new StreamWriter(zip.CreateEntry(NoteEntry).Open(), new UTF8Encoding(false))) sw.Write(sb.ToString());
+                    foreach (var f in files) zip.CreateEntryFromFile(f.Value, f.Key, CompressionLevel.NoCompression);
+                }
+                if (File.Exists(target)) File.Replace(tmp, target, null); else File.Move(tmp, target);
+                w.Toast($"Exported {Path.GetFileName(target)} ({files.Count} image{(files.Count == 1 ? "" : "s")})", "Open", () => w.OpenFile(target), seconds: 6);
+            }
+            catch (Exception ex) { w.Toast("Export failed: " + ex.Message); }
+        }
+
         /// Writes a new .task file containing just `text`.
         public static void CreateNew(string path, string text)
         {
