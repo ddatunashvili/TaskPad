@@ -83,6 +83,12 @@ Every thread becomes a card aligned with its line. Reply in place (Enter to send
 Colour codes like `#7C6CF6`, `#fff` or `#22D3EE80` get a live swatch. <kbd>Ctrl</kbd>+click a colour code or a link
 to copy it — a toast confirms, and for links offers **Open ↗**.
 
+## Markdown and plain text
+
+`⋯` → **Import Markdown…** converts `- [ ]` / `- [x]` tasks and `*` bullets into TaskPad syntax in a new tab.
+**Export as Markdown…** writes standard Markdown (GitHub task lists, ⚠/❓/⭐ markers, comments as footnotes);
+**Export as plain text…** writes a clean `.txt` with ☐ ☑ boxes and no markup.
+
 ## Export to PDF
 
 `⋯` → **Export to PDF…** or <kbd>Ctrl</kbd>+<kbd>P</kbd>. Produces a clean, print-friendly PDF: checkboxes, badges,

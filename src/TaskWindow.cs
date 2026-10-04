@@ -555,6 +555,9 @@ namespace TaskPad
             Item("Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
             Item("Close tab", "Ctrl+W", () => CloseTab(tab));
             Item("Export to PDF…", "Ctrl+P", () => PdfExport.Run(this, tab?.Doc)).IsEnabled = tab != null;
+            Item("Export as Markdown…", ".md", () => MarkdownIO.ExportMarkdown(this, tab?.Doc)).IsEnabled = tab != null;
+            Item("Export as plain text…", ".txt", () => MarkdownIO.ExportText(this, tab?.Doc)).IsEnabled = tab != null;
+            Item("Import Markdown…", ".md", () => MarkdownIO.Import(this));
             m.Items.Add(new Separator());
             Item("Split right", "Ctrl+\\", () => SplitActive(g, Dock.Right));
             Item("Split down", "Ctrl+Shift+\\", () => SplitActive(g, Dock.Bottom));
