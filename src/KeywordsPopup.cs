@@ -41,7 +41,7 @@ namespace TaskPad
             new Kw("•", "- ", "Bullet", Theme.Dash),
             new Kw("1.", "1. ", "Numbered list", Theme.Accent) { Bold = true },
             "Structure",
-            new Kw("H", "# ", "Heading  (## and ### smaller)", Theme.Heading) { Bold = true },
+            new Kw("H", "# ", "Heading  (## … ###### smaller)", Theme.Heading) { Bold = true },
             new Kw("—", "---", "Horizontal line  (=== accent)", Theme.Dash, Mode.Rule),
             "Inline",
             new Kw("@", "@name", "Person", Theme.Mention, Mode.Inline),

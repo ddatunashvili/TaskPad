@@ -33,6 +33,16 @@ namespace TaskPad
             foreach (var v in AllViews) v.Editor.WordWrap = Settings.WordWrap;
         }
 
+        public static void SetCommentsMode(string mode)
+        {
+            Settings.CommentsMode = mode;
+            foreach (var v in AllViews)
+            {
+                v.Margin.ApplyMode();
+                v.Editor.TextArea.TextView.Redraw();
+            }
+        }
+
         public static void ReloadChangedFiles()
         {
             foreach (var d in Docs.ToList()) d.ReloadIfChanged();

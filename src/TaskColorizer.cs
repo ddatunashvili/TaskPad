@@ -11,8 +11,11 @@ namespace TaskPad
     public sealed class TaskColorizer : DocumentColorizingTransformer
     {
         static readonly Regex Inline = new Regex(
-            @"(?<m>(?<![\w@])@[\w.\-]+)|(?<h>(?<![\w#&])#[A-Za-z][\w\-/]*)|(?<d>\b\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2}:\d{2})?\b|\b\d{1,2}:\d{2}\b)|(?<c>`[^`]+`)",
+            @"(?<m>(?<![\w@])@[\w.\-]+)|(?<h>(?<![\w#&])#(?!(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})\b)[A-Za-z][\w\-/]*)|(?<d>\b\d{4}-\d{2}-\d{2}(?:[ T]\d{1,2}:\d{2})?\b|\b\d{1,2}:\d{2}\b)|(?<c>`[^`]+`)",
             RegexOptions.Compiled);
+
+        // h1 … h6
+        static readonly double[] HeadingScale = { 1, 1.6, 1.4, 1.25, 1.12, 1.04, 0.96 };
 
         protected override void ColorizeLine(DocumentLine line)
         {
@@ -29,10 +32,11 @@ namespace TaskPad
 
             if (info.Heading > 0)
             {
-                double scale = info.Heading == 1 ? 1.35 : info.Heading == 2 ? 1.18 : 1.06;
+                double scale = HeadingScale[info.Heading];
+                var headBrush = info.Heading <= 2 ? Theme.Heading : info.Heading <= 4 ? Theme.Section : Theme.Fg;
                 ChangeLinePart(o + info.Indent, end, el =>
                 {
-                    el.TextRunProperties.SetForegroundBrush(Theme.Heading);
+                    el.TextRunProperties.SetForegroundBrush(headBrush);
                     el.TextRunProperties.SetFontRenderingEmSize(el.TextRunProperties.FontRenderingEmSize * scale);
                     SetStyle(el, FontWeights.Bold, FontStyles.Normal);
                 });

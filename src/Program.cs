@@ -15,6 +15,15 @@ namespace TaskPad
     {
         static readonly string InstanceId = "TaskPad-" + Environment.UserName;
         static Mutex _mutex;
+        public static bool Standalone;
+
+        /// Lets a freshly started copy (after an update) become the primary instance.
+        public static void ReleaseSingleInstance()
+        {
+            try { _mutex?.ReleaseMutex(); } catch { }
+            try { _mutex?.Dispose(); } catch { }
+            _mutex = null;
+        }
 
         [STAThread]
         public static int Main(string[] args)
@@ -65,6 +74,7 @@ namespace TaskPad
 
             // --standalone: skip the single-instance handoff (used for demos / testing)
             bool standalone = Array.Exists(args, a => a.Equals("--standalone", StringComparison.OrdinalIgnoreCase));
+            Standalone = standalone;
             if (!standalone)
             {
                 _mutex = new Mutex(true, InstanceId, out bool first);
@@ -87,6 +97,8 @@ namespace TaskPad
             if (win.TabCount == 0) win.NewTab();
             if (!standalone) StartPipeServer();
             win.Show();
+            Updater.CleanupOld();
+            if (!standalone) Updater.Start();
             return app.Run();
         }
 

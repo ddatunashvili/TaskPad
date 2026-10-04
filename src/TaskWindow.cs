@@ -29,6 +29,19 @@ namespace TaskPad
             CornerRadius = new CornerRadius(6),
             Visibility = Visibility.Collapsed,
         };
+        readonly Border _toast = new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 0, 18),
+            Padding = new Thickness(12, 7, 8, 7),
+            CornerRadius = new CornerRadius(8),
+            Background = new SolidColorBrush(Color.FromArgb(0xF2, 0x1C, 0x1C, 0x24)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x40)),
+            BorderThickness = new Thickness(1),
+            Visibility = Visibility.Collapsed,
+        };
+        DispatcherTimer _toastTimer;
         readonly TextBlock _stPos = StatusText(), _stTasks = StatusText(), _stInfo = StatusText();
         readonly Border _progressTrack = new Border { Width = 70, Height = 4, CornerRadius = new CornerRadius(2), Background = Theme.FgFaint, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
         readonly Border _progressFill = new Border { Height = 4, CornerRadius = new CornerRadius(2), Background = Theme.Accent, HorizontalAlignment = HorizontalAlignment.Left, Width = 0 };
@@ -128,6 +141,7 @@ namespace TaskPad
             var layer = new Grid();
             layer.Children.Add(_root);
             layer.Children.Add(_overlay);
+            layer.Children.Add(_toast);
             root.Children.Add(layer);
             return root;
         }
@@ -375,6 +389,47 @@ namespace TaskPad
             MoveTab(t, w.ActiveGroup, 0);
         }
 
+        // ---------------- toast ----------------
+
+        public static void ToastFrom(DependencyObject from, string text, string actionText = null, Action action = null, Color? swatch = null)
+        {
+            var w = Window.GetWindow(from) as TaskWindow ?? Workspace.LastActive;
+            w?.Toast(text, actionText, action, swatch);
+        }
+
+        public void Toast(string text, string actionText = null, Action action = null, Color? swatch = null, double seconds = 2.6)
+        {
+            var sp = new StackPanel { Orientation = Orientation.Horizontal };
+            if (swatch.HasValue)
+                sp.Children.Add(new Border { Width = 14, Height = 14, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(swatch.Value), BorderBrush = Brushes.White, BorderThickness = new Thickness(0.5), Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
+            sp.Children.Add(new TextBlock { Text = text, Foreground = Theme.Fg, FontFamily = new FontFamily("Segoe UI"), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
+            if (actionText != null)
+            {
+                var b = new Border
+                {
+                    Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(10, 3, 10, 4), CornerRadius = new CornerRadius(5),
+                    Background = new SolidColorBrush(Color.FromArgb(0x40, 0x7C, 0x6C, 0xF6)), Cursor = Cursors.Hand,
+                    Child = new TextBlock { Text = actionText, Foreground = Theme.Fg, FontFamily = new FontFamily("Segoe UI"), FontSize = 12.5 },
+                };
+                b.MouseLeftButtonUp += (s, e) => { _toast.Visibility = Visibility.Collapsed; action?.Invoke(); };
+                sp.Children.Add(b);
+            }
+            _toast.Child = sp;
+            _toast.Visibility = Visibility.Visible;
+            _toast.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
+            _toastTimer?.Stop();
+            _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+            _toastTimer.Tick += (s, e) =>
+            {
+                _toastTimer.Stop();
+                if (_toast.IsMouseOver) { _toastTimer.Start(); return; }
+                var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(220));
+                fade.Completed += (s2, e2) => _toast.Visibility = Visibility.Collapsed;
+                _toast.BeginAnimation(OpacityProperty, fade);
+            };
+            _toastTimer.Start();
+        }
+
         // ---------------- drag & drop overlay ----------------
 
         public void ShowDropRect(Rect r)
@@ -433,6 +488,7 @@ namespace TaskPad
             Item("Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
             Item("Save as…", "Ctrl+Shift+S", () => tab?.Doc.Save(this, true));
             Item("Close tab", "Ctrl+W", () => CloseTab(tab));
+            Item("Export to PDF…", "Ctrl+P", () => PdfExport.Run(this, tab?.Doc)).IsEnabled = tab != null;
             m.Items.Add(new Separator());
             Item("Split right", "Ctrl+\\", () => SplitActive(g, Dock.Right));
             Item("Split down", "Ctrl+Shift+\\", () => SplitActive(g, Dock.Bottom));
@@ -442,6 +498,7 @@ namespace TaskPad
             Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
             Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
             Item("Reset zoom", "Ctrl+0", () => Workspace.Zoom(0));
+            Item("Comments in right margin", null, () => Workspace.SetCommentsMode(Comments.MarginMode ? "hover" : "margin"), Comments.MarginMode);
             m.Items.Add(new Separator());
             if (Shell.IsRegistered) Item("Remove from Explorer right-click menu", null, () => Shell.Unregister(true));
             else Item("Add to Explorer right-click menu", null, () => Shell.Register(true));
@@ -449,6 +506,13 @@ namespace TaskPad
             m.Items.Add(new Separator());
             Item("Keywords", "Ctrl+K", () => KeywordsPopup.Show(anchor, () => g.Active?.Editor, ShowCheatSheet));
             Item("Syntax cheat sheet", "F1", ShowCheatSheet);
+            m.Items.Add(new Separator());
+            Item($"Check for updates  (v{Updater.Short(Updater.Current)})", null, () => Updater.Check(silent: false));
+            Item("Auto-install updates", null, () =>
+            {
+                Workspace.Settings.AutoUpdate = Workspace.Settings.AutoUpdate == "auto" ? "ask" : "auto";
+                Workspace.Settings.Save();
+            }, Workspace.Settings.AutoUpdate == "auto");
             m.IsOpen = true;
         }
 
@@ -546,6 +610,7 @@ namespace TaskPad
             else if (ctrl && (key == Key.D0 || key == Key.NumPad0)) Workspace.Zoom(0);
             else if (mods == ModifierKeys.Alt && key == Key.Z) Workspace.ToggleWrap();
             else if (mods == ModifierKeys.None && key == Key.F1) ShowCheatSheet();
+            else if (ctrl && key == Key.P) PdfExport.Run(this, ActiveTab?.Doc);
             else if (ctrl && key == Key.K && g != null) KeywordsPopup.Show(g.Bar, () => g.Active?.Editor, ShowCheatSheet);
             else if (ctrl && key >= Key.D1 && key <= Key.D9 && g != null && key - Key.D1 < g.Tabs.Count) g.Activate(g.Tabs[key - Key.D1]);
             else handled = false;
@@ -642,6 +707,15 @@ Inline  @person  #tag  2026-10-04 14:30  `code`  https://example.com (Ctrl+click
 13. Ctrl+wheel      zoom
 14. Ctrl+M          comment on selected words (hover to read, click bubble to edit)
 15. Ctrl+V          paste an image (saved to images/ next to the file)
+16. Ctrl+P          export to PDF
+17. Ctrl+click      copy a colour code like #7C6CF6 or a link
+
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
 
 ## Subtasks
 [ ] Parent task

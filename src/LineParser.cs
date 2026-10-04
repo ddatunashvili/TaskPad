@@ -18,7 +18,7 @@ namespace TaskPad
     {
         public int Indent;
         public bool IsRule;
-        public int Heading;            // 1..3 for #, ##, ###
+        public int Heading;            // 1..6 for # … ######
         public int CommentLen;         // optional leading "// "
         public Check Check;
         public int CheckStart = -1;
@@ -62,8 +62,8 @@ namespace TaskPad
             if (t[i] == '#')
             {
                 int h = 0;
-                while (i + h < n && t[i + h] == '#' && h < 4) h++;
-                if (h <= 3 && i + h < n && t[i + h] == ' ')
+                while (i + h < n && t[i + h] == '#' && h < 7) h++;
+                if (h <= 6 && i + h < n && t[i + h] == ' ')
                 {
                     info.Heading = h;
                     info.ContentStart = Skip(t, i + h);

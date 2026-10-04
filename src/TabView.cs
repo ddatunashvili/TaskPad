@@ -14,6 +14,8 @@ namespace TaskPad
     {
         public readonly Doc Doc;
         public readonly TextEditor Editor;
+        public readonly Grid Root = new Grid();
+        public CommentMargin Margin;
         public readonly Border Header;
         public readonly TranslateTransform Shift = new TranslateTransform();
         public EditorGroup Group;
@@ -25,6 +27,14 @@ namespace TaskPad
             Doc = doc;
             doc.Views.Add(this);
             Editor = CreateEditor(doc);
+            var ui = CommentUi.Attach(Editor);
+            Margin = new CommentMargin(Editor);
+            ui.Margin = Margin;
+            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(Margin, 1);
+            Root.Children.Add(Editor);
+            Root.Children.Add(Margin);
 
             _title = new TextBlock
             {
@@ -146,7 +156,7 @@ namespace TaskPad
             ta.TextView.ElementGenerators.Add(new ImageGenerator(doc));
             SmartEditing.Attach(ed);
             SelectionToolbar.Attach(ed);
-            CommentUi.Attach(ed);
+            HexAndLinks.Attach(ed);
 
             // Ctrl+V / Shift+Insert with an image (or image files) on the clipboard
             ta.PreviewKeyDown += (s, e) =>

@@ -91,7 +91,7 @@ namespace TaskPad
             if (i < 0) return;
             Tabs.RemoveAt(i);
             Strip.Children.Remove(t.Header);
-            if (Body.Child == t.Editor) Body.Child = null;
+            if (Body.Child == t.Root) Body.Child = null;
             t.Group = null;
             if (Active == t)
             {
@@ -105,8 +105,8 @@ namespace TaskPad
             if (t == null) return;
             var prev = Active;
             Active = t;
-            if (t.Editor.Parent is Border old && old != Body) old.Child = null;
-            Body.Child = t.Editor;
+            if (t.Root.Parent is Border old && old != Body) old.Child = null;
+            Body.Child = t.Root;
             prev?.Refresh();
             t.Refresh();
             t.Header.BringIntoView();
