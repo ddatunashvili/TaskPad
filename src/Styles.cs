@@ -82,6 +82,9 @@ namespace TaskPad
   </Setter.Value></Setter>
 </Style>");
 
+            // separators inside menus use this key, not typeof(Separator)
+            r[MenuItem.SeparatorStyleKey] = r[typeof(Separator)];
+
             r[typeof(ToolTip)] = Parse($@"
 <Style {Ns} TargetType='ToolTip'>
   <Setter Property='Template'><Setter.Value>

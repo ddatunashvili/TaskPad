@@ -48,6 +48,28 @@ namespace TaskPad
             else ed.CaretOffset = b.EndOffset;
         }
 
+        /// Replaces the marker of one line (no toggling). `syntax == null` removes it.
+        public static void SetLine(ICSharpCode.AvalonEdit.Document.TextDocument doc, int lineNumber, string syntax)
+        {
+            var line = doc.GetLineByNumber(lineNumber);
+            var text = doc.GetText(line);
+            var info = LineParser.Parse(text);
+            int start = info.Indent + info.CommentLen;
+            int end = HasMarker(info) ? info.ContentStart : start;
+            doc.Replace(line.Offset + start, end - start, syntax ?? "");
+        }
+
+        /// The marker text of a line ("[ ] ", "! ", "TODO: " …) and its document range.
+        public static string Current(ICSharpCode.AvalonEdit.Document.TextDocument doc, int lineNumber, out int offset, out int length)
+        {
+            var line = doc.GetLineByNumber(lineNumber);
+            var text = doc.GetText(line);
+            var info = LineParser.Parse(text);
+            offset = line.Offset + info.Indent + info.CommentLen;
+            length = HasMarker(info) ? info.ContentStart - info.Indent - info.CommentLen : 0;
+            return MarkerOf(text, info);
+        }
+
         static bool HasMarker(LineInfo i) =>
             i.Check != Check.None || i.Tag != Tag.None || i.NumberStart >= 0 || i.Heading > 0;
 

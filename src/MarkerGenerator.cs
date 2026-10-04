@@ -62,6 +62,8 @@ namespace TaskPad
                     case TokKind.Checkbox: el = Checkbox(doc, offset, info.Check, info.Indent > 0); break;
                     default: el = TagGlyph(info.Tag, t.Length); break;
                 }
+                if (t.Kind == TokKind.Checkbox || t.Kind == TokKind.Tag)
+                    KeywordMenu.Attach(el, tv, doc.CreateAnchor(line.Offset));
                 return new InlineObjectElement(t.Length, el);
             }
             return null;

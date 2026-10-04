@@ -139,6 +139,9 @@ Type these at the start of a line:
 | `![](path)` | image chip |
 | `{==text==}{>>note<<}` | commented text |
 
+**Right-click** any checkbox or icon to switch that line to another keyword, remove it, or type your own.
+Heading `#` marks stay hidden except on the line you're editing.
+
 Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl</kbd>+click) are coloured too.
 
 ## Keys
