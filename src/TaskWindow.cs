@@ -563,6 +563,13 @@ namespace TaskPad
             Item("Split down", "Ctrl+Shift+\\", () => SplitActive(g, Dock.Bottom));
             Item("Move tab to new window", "Ctrl+Shift+M", () => MoveToNewWindow(tab));
             m.Items.Add(new Separator());
+            Item("Auto save", null, () =>
+            {
+                Workspace.Settings.AutoSave = !Workspace.Settings.AutoSave;
+                Workspace.Settings.Save();
+                if (Workspace.Settings.AutoSave) foreach (var d in Workspace.Docs.Where(d => d.Dirty && d.Path != null).ToList()) d.Save(this, false);
+                Toast(Workspace.Settings.AutoSave ? "Auto save on" : "Auto save off — Ctrl+S to save");
+            }, Workspace.Settings.AutoSave);
             Item("Word wrap", "Alt+Z", Workspace.ToggleWrap, Workspace.Settings.WordWrap);
             Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
             Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
@@ -696,7 +703,8 @@ namespace TaskPad
             foreach (var t in tabs)
             {
                 if (!t.Doc.Views.All(v => v.Group?.Owner == this)) continue;
-                if (hotExit) { if (t.Doc.Path != null && t.Doc.Dirty) t.Doc.Save(this, false); }
+                // with auto save off, unsaved edits stay unsaved (kept in the session backup)
+                if (hotExit) { if (t.Doc.Path != null && t.Doc.Dirty && Workspace.Settings.AutoSave) t.Doc.Save(this, false); }
                 else if (!t.Doc.ConfirmClose(this)) { e.Cancel = true; return; }
             }
             if (hotExit && !Session.Quitting && !Session.Restoring) Session.Save();

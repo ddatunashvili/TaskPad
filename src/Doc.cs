@@ -36,7 +36,7 @@ namespace TaskPad
             _autoSave.Tick += (s, e) =>
             {
                 _autoSave.Stop();
-                if (Dirty && Path != null) Save(null, false);
+                if (Dirty && Path != null && Workspace.Settings.AutoSave) Save(null, false);
             };
             Document.TextChanged += (s, e) =>
             {

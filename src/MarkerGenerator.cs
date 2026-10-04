@@ -21,10 +21,22 @@ namespace TaskPad
         readonly Func<int> _caretLine;
 
         /// `caretLine`: heading markers ("## ") stay visible on the caret's line so the level can be edited.
-        public MarkerGenerator(Func<int> caretLine = null) { _caretLine = caretLine; }
+        readonly Func<int> _revealLine;
+        readonly Action<int> _reveal;
+        static DateTime _lastToggle;
+        static ICSharpCode.AvalonEdit.Document.TextDocument _lastToggleDoc;
+
+        /// `revealLine` / `reveal`: double-clicking an icon shows that line's raw code ("[ ]", "!", …) for editing.
+        public MarkerGenerator(Func<int> caretLine = null, Func<int> revealLine = null, Action<int> reveal = null)
+        {
+            _caretLine = caretLine;
+            _revealLine = revealLine;
+            _reveal = reveal;
+        }
 
         bool Skip(Tok t, ICSharpCode.AvalonEdit.Document.DocumentLine line) =>
-            t.Kind == TokKind.HeadingMark && _caretLine != null && _caretLine() == line.LineNumber;
+            (_revealLine != null && _revealLine() == line.LineNumber) ||
+            (t.Kind == TokKind.HeadingMark && _caretLine != null && _caretLine() == line.LineNumber);
 
         public override int GetFirstInterestedOffset(int startOffset)
         {
@@ -63,7 +75,20 @@ namespace TaskPad
                     default: el = TagGlyph(info.Tag, t.Length); break;
                 }
                 if (t.Kind == TokKind.Checkbox || t.Kind == TokKind.Tag)
-                    KeywordMenu.Attach(el, tv, doc.CreateAnchor(line.Offset));
+                {
+                    var lineAnchor = doc.CreateAnchor(line.Offset);
+                    KeywordMenu.Attach(el, tv, lineAnchor);
+                    el.PreviewMouseLeftButtonDown += (s, e) =>
+                    {
+                        if (e.ClickCount < 2 || _reveal == null || lineAnchor.IsDeleted) return;
+                        e.Handled = true;
+                        // the first click of a double-click toggled the box: take that back
+                        if (_lastToggleDoc == doc && (DateTime.Now - _lastToggle).TotalMilliseconds < 700 && doc.UndoStack.CanUndo)
+                            doc.UndoStack.Undo();
+                        _lastToggleDoc = null;
+                        _reveal(doc.GetLineByOffset(lineAnchor.Offset).LineNumber);
+                    };
+                }
                 return new InlineObjectElement(t.Length, el);
             }
             return null;
@@ -151,6 +176,8 @@ namespace TaskPad
                              : state == Check.Open ? Check.Done : Check.Open;
                 if (target == state && state != Check.Open) target = Check.Open;
                 SmartEditing.SetCheck(doc, anchor.Offset, target);
+                _lastToggle = DateTime.Now;
+                _lastToggleDoc = doc;
             };
             return host;
         }

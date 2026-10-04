@@ -152,7 +152,24 @@ namespace TaskPad
             ta.LeftMargins.Add(new Rectangle { Width = st.LeftMargin, Fill = Brushes.Transparent });
 
             ta.TextView.LineTransformers.Add(new TaskColorizer());
-            ta.TextView.ElementGenerators.Add(new MarkerGenerator(() => ta.Caret.Line));
+            // double-click an icon: show that line's raw code until the caret leaves it
+            int revealLine = -1;
+            void Reveal(int lineNo)
+            {
+                revealLine = lineNo;
+                ta.TextView.Redraw(ed.Document.GetLineByNumber(lineNo));
+                var line = ed.Document.GetLineByNumber(lineNo);
+                var info = LineParser.Parse(ed.Document.GetText(line));
+                if (info.Check != Check.None) ed.Select(line.Offset + info.CheckStart + 1, 1);   // "[ ]" -> select the state char
+                else
+                {
+                    var marker = Markers.Current(ed.Document, lineNo, out int off, out int len);
+                    int trimmed = marker.TrimEnd().Length;
+                    if (trimmed > 0) ed.Select(off, trimmed); else ed.CaretOffset = off;
+                }
+                ta.Focus();
+            }
+            ta.TextView.ElementGenerators.Add(new MarkerGenerator(() => ta.Caret.Line, () => revealLine, Reveal));
             // re-render the old and new caret lines so heading "#" markers show only while editing that line
             int lastCaretLine = 1;
             ta.Caret.PositionChanged += (s, e) =>
@@ -160,6 +177,12 @@ namespace TaskPad
                 int now = ta.Caret.Line;
                 if (now == lastCaretLine) return;
                 var doc = ed.Document;
+                if (revealLine > 0 && revealLine != now)
+                {
+                    int r = revealLine;
+                    revealLine = -1;
+                    if (r <= doc.LineCount) ta.TextView.Redraw(doc.GetLineByNumber(r));
+                }
                 if (lastCaretLine <= doc.LineCount) ta.TextView.Redraw(doc.GetLineByNumber(lastCaretLine));
                 ta.TextView.Redraw(doc.GetLineByNumber(now));
                 lastCaretLine = now;

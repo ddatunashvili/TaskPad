@@ -146,6 +146,7 @@ Type these at the start of a line:
 | `{==text==}{>>note<<}` | commented text |
 
 **Right-click** any checkbox or icon to switch that line to another keyword, remove it, or type your own.
+**Double-click** it to show the raw code (`[ ]`, `!`, `TODO:` …) and edit it directly — e.g. type `x` to turn `[ ]` into `[x]`.
 Heading `#` marks stay hidden except on the line you're editing.
 
 Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl</kbd>+click) are coloured too.
@@ -175,7 +176,7 @@ Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> | reopen last closed file (↺ button lists them all) |
 | <kbd>F1</kbd> | cheat sheet |
 
-Files auto-save one second after you stop typing and reload when changed on disk.
+Files auto-save one second after you stop typing (toggle with `⋯` → **Auto save**, or `autoSave=false`) and reload when changed on disk.
 
 **Nothing is lost on close.** TaskPad remembers every window, split, tab and cursor, and keeps unsaved and
 untitled text in a `session` folder (saved continuously, so it even survives a crash). Close the app without

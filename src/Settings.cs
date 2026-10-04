@@ -12,6 +12,7 @@ namespace TaskPad
         public double FontSize = 16;
         public bool WordWrap = true;
         public int AutoSaveDelayMs = 1000;
+        public bool AutoSave = true;
         public int IndentSize = 2;
         public double LeftMargin = 28;
         public double ImagePreviewHeight = 0;   // 0 = compact chip, >0 = inline thumbnail height
@@ -48,6 +49,7 @@ namespace TaskPad
                 if (map.TryGetValue("font", out v) && v.Length > 0) s.FontFamily = v;
                 if (map.TryGetValue("fontSize", out v)) s.FontSize = D(v, s.FontSize);
                 if (map.TryGetValue("wordWrap", out v)) s.WordWrap = v == "true";
+                if (map.TryGetValue("autoSave", out v)) s.AutoSave = v != "false";
                 if (map.TryGetValue("autoSaveDelayMs", out v)) s.AutoSaveDelayMs = (int)D(v, s.AutoSaveDelayMs);
                 if (map.TryGetValue("imagePreviewHeight", out v)) s.ImagePreviewHeight = Math.Max(0, D(v, s.ImagePreviewHeight));
                 if (map.TryGetValue("commentWidth", out v)) s.CommentWidth = D(v, s.CommentWidth);
@@ -81,6 +83,7 @@ namespace TaskPad
                     "font=" + FontFamily,
                     "fontSize=" + FontSize.ToString(ci),
                     "wordWrap=" + (WordWrap ? "true" : "false"),
+                    "autoSave=" + (AutoSave ? "true" : "false"),
                     "autoSaveDelayMs=" + AutoSaveDelayMs,
                     "indentSize=" + IndentSize,
                     "leftMargin=" + LeftMargin.ToString(ci),

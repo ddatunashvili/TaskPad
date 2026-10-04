@@ -95,6 +95,7 @@ namespace TaskPad
             }
             SmartEditing.GetLineRange(_ed, out int first, out int last);
             bool multi = last > first;
+            if (!multi && ta.Selection.Length < 2) { Hide(); return; } // a single character isn't worth a comment bubble
             // one line: offer a comment on the selected words; several lines: line markers
             _markers.Visibility = multi ? Visibility.Visible : Visibility.Collapsed;
             _commentBtn.Visibility = multi ? Visibility.Collapsed : Visibility.Visible;
