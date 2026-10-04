@@ -104,7 +104,7 @@ Dark by default. `⋯` → **Light theme** switches every window instantly (or `
 
 ## Colours and links
 
-Colour codes like `#7C6CF6`, `#fff` or `#22D3EE80` get a live swatch. <kbd>Ctrl</kbd>+click a colour code or a link
+Colour codes like `#22C55E`, `#fff` or `#22D3EE80` get a live swatch. <kbd>Ctrl</kbd>+click a colour code or a link
 to copy it — a toast confirms, and for links offers **Open ↗**.
 
 ## Markdown and plain text

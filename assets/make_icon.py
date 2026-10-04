@@ -6,10 +6,10 @@ def frame(n):
     im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     r = int(S * 0.22)
-    d.rounded_rectangle([0, 0, S - 1, S - 1], r, fill=(18, 18, 24, 255), outline=(124, 108, 246, 255), width=max(s, S // 32))
+    d.rounded_rectangle([0, 0, S - 1, S - 1], r, fill=(18, 18, 24, 255), outline=(34, 197, 94, 255), width=max(s, S // 32))
     # checkbox
     bx0, by0, bx1, by1 = S * 0.22, S * 0.22, S * 0.78, S * 0.78
-    d.rounded_rectangle([bx0, by0, bx1, by1], int(S * 0.1), fill=(124, 108, 246, 255))
+    d.rounded_rectangle([bx0, by0, bx1, by1], int(S * 0.1), fill=(34, 197, 94, 255))
     w = max(s * 2, int(S * 0.085))
     pts = [(S * 0.33, S * 0.51), (S * 0.45, S * 0.63), (S * 0.68, S * 0.37)]
     d.line(pts, fill=(255, 255, 255, 255), width=w, joint="curve")

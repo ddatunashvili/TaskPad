@@ -435,7 +435,7 @@ namespace TaskPad
         {
             var t = new ControlTemplate(typeof(System.Windows.Controls.Primitives.Thumb));
             var f = new FrameworkElementFactory(typeof(Border));
-            f.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(0xD0, 0x7C, 0x6C, 0xF6)));
+            f.SetValue(Border.BackgroundProperty, new SolidColorBrush(Color.FromArgb(0xD0, 0x22, 0xC5, 0x5E)));
             f.SetValue(Border.CornerRadiusProperty, new CornerRadius(6, 0, 5, 0));
             t.VisualTree = f;
             return t;

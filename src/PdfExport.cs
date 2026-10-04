@@ -195,12 +195,12 @@ main { max-width: 760px; margin: 0 auto; }
 h1,h2,h3,h4,h5,h6 { margin: .9em 0 .35em; line-height: 1.25; color: #111; }
 h1 { font-size: 2em; } h2 { font-size: 1.6em; } h3 { font-size: 1.3em; } h4 { font-size: 1.12em; } h5 { font-size: 1em; } h6 { font-size: .9em; color: #555; }
 .gap { height: .6em; }
-hr { border: 0; border-top: 1px solid #ddd; margin: .8em 0; } hr.accent { border-top: 2px solid #7c6cf6; }
+hr { border: 0; border-top: 1px solid #ddd; margin: .8em 0; } hr.accent { border-top: 2px solid #16a34a; }
 .line { display: flex; gap: .5em; align-items: baseline; margin: .12em 0; break-inside: avoid; }
 .section .txt { font-weight: 700; }
 .box { flex: none; width: .95em; height: .95em; border: 1.5px solid #8a8a96; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; font-size: .8em; color: #fff; transform: translateY(.12em); }
 .sub .box { width: .8em; height: .8em; }
-.done .box { background: #7c6cf6; border-color: #7c6cf6; } .done .txt, .cancel .txt { color: #888; text-decoration: line-through; }
+.done .box { background: #16a34a; border-color: #16a34a; } .done .txt, .cancel .txt { color: #888; text-decoration: line-through; }
 .doing .box { border-color: #d99a00; color: #d99a00; } .cancel .box { border-color: #e04444; color: #e04444; }
 .badge { flex: none; width: 1.1em; height: 1.1em; border-radius: 50%; color: #fff; font-weight: 700; font-size: .8em; display: inline-flex; align-items: center; justify-content: center; }
 .tag-bang .badge { background: #e5484d; } .tag-bang .txt { color: #c62f35; font-weight: 700; }
@@ -210,7 +210,7 @@ hr { border: 0; border-top: 1px solid #ddd; margin: .8em 0; } hr.accent { border
 .glyph { flex: none; width: 1em; text-align: center; }
 .tag-star .glyph, .tag-star .txt { color: #12936a; } .tag-arrow .glyph, .tag-arrow .txt { color: #8b3fd1; font-weight: 600; }
 .tag-back .glyph, .tag-back .txt { color: #0b8aa3; } .tag-slash .glyph, .tag-slash .txt { color: #1f9d55; font-weight: 600; } .tag-dash .glyph { color: #888; }
-.num { color: #7c6cf6; font-weight: 700; }
+.num { color: #16a34a; font-weight: 700; }
 code { font-family: 'Cascadia Mono', Consolas, monospace; background: #f3f2f8; padding: 0 .3em; border-radius: 3px; font-size: .9em; color: #b45309; }
 .mention { color: #b7791f; font-weight: 600; } .hashtag { color: #0e7490; } .date { color: #2563eb; }
 a { color: #2563eb; }

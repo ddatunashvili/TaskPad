@@ -23,7 +23,7 @@ namespace TaskPad
         readonly Canvas _overlay = new Canvas { IsHitTestVisible = false };
         readonly Border _dropRect = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(0x30, 0x7C, 0x6C, 0xF6)),
+            Background = new SolidColorBrush(Color.FromArgb(0x30, 0x22, 0xC5, 0x5E)),
             BorderBrush = Theme.Accent,
             BorderThickness = new Thickness(1.5),
             CornerRadius = new CornerRadius(6),
@@ -892,7 +892,7 @@ Inline  @person  #tag  2026-10-04 14:30  `code`  https://example.com (Ctrl+click
 14. Ctrl+M          comment on selected words (hover to read, click bubble to edit)
 15. Ctrl+V          paste an image (saved to images/ next to the file)
 16. Ctrl+P          export to PDF
-17. Ctrl+click      copy a colour code like #7C6CF6 or a link
+17. Ctrl+click      copy a colour code like #22C55E or a link
 
 # Heading 1
 ## Heading 2

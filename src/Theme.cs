@@ -36,25 +36,25 @@ namespace TaskPad
             {
                 Set(Bg, "#0E0E11"); Set(Chrome, "#09090B"); Set(ChromeBorder, "#1C1C22");
                 Set(Fg, "#D4D4D8"); Set(FgDim, "#71717A"); Set(FgFaint, "#3F3F46");
-                Set(LineNo, "#3F3F4A"); Set(CurrentLine, "#16161C"); Set(Selection, "#553F3FA8");
-                Set(Accent, "#7C6CF6"); Set(Heading, "#EDE9FE"); Set(Section, "#E4E4E7"); Set(Done, "#5B5B66");
-                Set(Popup, "#17171D"); Set(Hover, "#26262F"); Set(Input, "#0E0E11"); Set(AccentSoft, "#407C6CF6");
+                Set(LineNo, "#3F3F4A"); Set(CurrentLine, "#16161C"); Set(Selection, "#4522C55E");
+                Set(Accent, "#22C55E"); Set(Heading, "#F4F4F5"); Set(Section, "#E4E4E7"); Set(Done, "#5B5B66");
+                Set(Popup, "#17171D"); Set(Hover, "#26262F"); Set(Input, "#0E0E11"); Set(AccentSoft, "#3322C55E");
                 Set(Bang, "#FF5C5C"); Set(Slash, "#4ADE80"); Set(Star, "#34D399"); Set(Question, "#A78BFA");
                 Set(Todo, "#FBBF24"); Set(Arrow, "#C084FC"); Set(Back, "#22D3EE"); Set(Dash, "#94A3B8");
                 Set(Mention, "#FBBF24"); Set(HashTag, "#22D3EE"); Set(Date, "#60A5FA"); Set(Code, "#FDBA74"); Set(Link, "#60A5FA");
-                Set(BoxOpen, "#6B6B78"); Set(BoxDone, "#7C6CF6"); Set(BoxDoing, "#FBBF24"); Set(BoxCancel, "#EF4444");
+                Set(BoxOpen, "#6B6B78"); Set(BoxDone, "#22C55E"); Set(BoxDoing, "#FBBF24"); Set(BoxCancel, "#EF4444");
             }
             else
             {
                 Set(Bg, "#FFFFFF"); Set(Chrome, "#F3F3F6"); Set(ChromeBorder, "#E2E2E8");
                 Set(Fg, "#1F2328"); Set(FgDim, "#6E6E7A"); Set(FgFaint, "#B4B4BF");
-                Set(LineNo, "#A3A3AE"); Set(CurrentLine, "#F4F4F8"); Set(Selection, "#406D5DF0");
-                Set(Accent, "#6D5DF0"); Set(Heading, "#1B1534"); Set(Section, "#26262E"); Set(Done, "#9B9BA6");
-                Set(Popup, "#FFFFFF"); Set(Hover, "#EDEDF3"); Set(Input, "#FAFAFC"); Set(AccentSoft, "#306D5DF0");
+                Set(LineNo, "#A3A3AE"); Set(CurrentLine, "#F4F4F8"); Set(Selection, "#3516A34A");
+                Set(Accent, "#16A34A"); Set(Heading, "#14241A"); Set(Section, "#26262E"); Set(Done, "#9B9BA6");
+                Set(Popup, "#FFFFFF"); Set(Hover, "#EDEDF3"); Set(Input, "#FAFAFC"); Set(AccentSoft, "#2816A34A");
                 Set(Bang, "#D92D33"); Set(Slash, "#16A34A"); Set(Star, "#059669"); Set(Question, "#7C3AED");
                 Set(Todo, "#C2860A"); Set(Arrow, "#9333EA"); Set(Back, "#0891B2"); Set(Dash, "#64748B");
                 Set(Mention, "#B7791F"); Set(HashTag, "#0E7490"); Set(Date, "#2563EB"); Set(Code, "#C2410C"); Set(Link, "#2563EB");
-                Set(BoxOpen, "#9A9AA6"); Set(BoxDone, "#6D5DF0"); Set(BoxDoing, "#D99A00"); Set(BoxCancel, "#DC2626");
+                Set(BoxOpen, "#9A9AA6"); Set(BoxDone, "#16A34A"); Set(BoxDoing, "#D99A00"); Set(BoxCancel, "#DC2626");
             }
         }
 
