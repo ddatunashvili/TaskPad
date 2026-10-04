@@ -69,6 +69,18 @@ namespace TaskPad
             catch { return null; }
         }
 
+        /// Every image the note references, in order (for ◀ ▶ in the viewer).
+        public static List<string> InNote(Doc doc)
+        {
+            var list = new List<string>();
+            foreach (Match m in Ref.Matches(doc.Document.Text))
+            {
+                var p = Resolve(doc, m.Groups[2].Value);
+                if (p != null && File.Exists(p) && !list.Contains(p, StringComparer.OrdinalIgnoreCase)) list.Add(p);
+            }
+            return list;
+        }
+
         static string UniquePath(string dir, string name, string ext)
         {
             Directory.CreateDirectory(dir);
@@ -413,7 +425,7 @@ namespace TaskPad
                 el.MouseLeftButtonDown += (s, e) =>
                 {
                     e.Handled = true;
-                    ImageViewer.Show(path);
+                    ImageViewer.Show(path, Images.InNote(_doc));
                 };
             }
             return el;

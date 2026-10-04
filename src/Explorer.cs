@@ -271,7 +271,12 @@ namespace TaskPad
         void OpenFile(string path)
         {
             var ext = Path.GetExtension(path).ToLowerInvariant();
-            if (Images.IsImageFile(path)) { ImageViewer.Show(path); return; }
+            if (Images.IsImageFile(path))
+            {
+                var folder = Directory.GetFiles(Path.GetDirectoryName(path)).Where(Images.IsImageFile).OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase).ToList();
+                ImageViewer.Show(path, folder);
+                return;
+            }
             if (ext == ".pdf" || ext == ".exe" || ext == ".lnk" || (Doc.LooksBinary(path) && !TaskFile.Is(path)))
             {
                 try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch (Exception ex) { _owner.Toast(ex.Message); }

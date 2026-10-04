@@ -139,7 +139,9 @@ that is removed when you close it. Under the hood it is a ZIP archive (`note.txt
 <kbd>Ctrl</kbd>+<kbd>V</kbd> a screenshot or drop image files. In a `.task` note they are stored inside the file; in a `.txt` note they
 go to `%LOCALAPPDATA%\TaskPad\images` (no folders appear next to your notes). Shown as a small chip (`![](images/…png)` in the file). Hover for a preview, click to open the inspector:
 wheel to zoom at the cursor, drag to pan, double-click for fit / 100 %, pixel coordinates and colour,
-**📌 pin on top** to keep it as a reference while you type.
+**📌 pin on top** to keep it as a reference while you type. **◀ ▶** (or ←/→) step through the note's images (or the
+folder's, when opened from the sidebar). **✂ Crop** (C): drag the area to keep, Enter to apply, Ctrl+Z to undo;
+**Ctrl+S** saves (images inside a `.task` note are repacked into it), **Ctrl+Shift+S** saves a copy.
 
 <p align="center"><img src="docs/images.gif" alt="Paste an image and inspect it" width="900"></p>
 
