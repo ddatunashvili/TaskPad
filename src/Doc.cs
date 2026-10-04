@@ -43,6 +43,7 @@ namespace TaskPad
             {
                 if (!Dirty) { Dirty = true; Raise(); }
                 Session.MarkDirty();
+                foreach (var w in Workspace.Windows) w.Explorer?.PokeAgenda();
                 _autoSave.Stop();
                 _autoSave.Start();
             };

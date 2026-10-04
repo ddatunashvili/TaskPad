@@ -55,6 +55,7 @@ namespace TaskPad
                 return Installer.RunSetup();
 
             var files = new List<string>();
+            bool trayOnly = false;
             for (int i = 0; i < args.Length; i++)
             {
                 var a = args[i];
@@ -82,6 +83,9 @@ namespace TaskPad
                         Shell.Unregister(true);
                         return 0;
                     case "--standalone":
+                        break;
+                    case "--tray":
+                        trayOnly = true;
                         break;
                     case "--new":
                         var dir = i + 1 < args.Length ? args[++i] : Environment.CurrentDirectory;
@@ -116,8 +120,13 @@ namespace TaskPad
 
             // bring back the last session (windows, splits, tabs, unsaved text), then add any files passed in
             Session.Enabled = !standalone && Workspace.Settings.RestoreSession;
-            TaskWindow win;
-            if (Session.Restore())
+            Tray.Start();
+            TaskWindow win = null;
+            if (trayOnly && Tray.Active && files.Count == 0)
+            {
+                // started with Windows: stay in the tray until opened
+            }
+            else if (Session.Restore())
             {
                 win = Workspace.LastActive;
                 foreach (var f in files) win.OpenFile(f);
@@ -132,7 +141,7 @@ namespace TaskPad
             }
             if (!standalone) StartPipeServer();
             Due.Start();
-            if (!Workspace.Settings.WelcomeSeen || Workspace.Settings.ShowWelcome)
+            if (win != null && (!Workspace.Settings.WelcomeSeen || Workspace.Settings.ShowWelcome))
             {
                 win.ShowWelcome();
                 Workspace.Settings.WelcomeSeen = true;
@@ -181,7 +190,7 @@ namespace TaskPad
                             {
                                 if (paths.Length == 1 && paths[0] == Installer.QuitMessage) { Updater.QuitAll(); return; }
                                 var w = Workspace.LastActive != null && Workspace.LastActive.IsVisible ? Workspace.LastActive : Workspace.Windows.LastOrDefault(x => x.IsVisible);
-                                if (w == null) { w = new TaskWindow(); w.Show(); }
+                                if (w == null) { Tray.ShowMain(); w = Workspace.LastActive; if (paths.Length == 0) { w?.Activate(); return; } }
                                 w.ReceiveFromOtherInstance(paths);
                             }));
                         }

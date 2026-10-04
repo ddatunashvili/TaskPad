@@ -13,6 +13,8 @@ namespace TaskPad
         public bool WordWrap = true;
         public int AutoSaveDelayMs = 1000;
         public bool AutoSave = true;
+        public bool TrayEnabled = true;            // keep running in the tray (reminders, quick capture)
+        public string InboxPath = "";             // quick-capture target; empty = Documents\TaskPad\Inbox.task
         public bool WelcomeSeen = false, ShowWelcome = false;
         public string CodeTheme = "auto";       // auto | One Dark | Dracula | Monokai | Nord | GitHub Dark | GitHub Light | One Light | Solarized Light
         public string ExplorerFolder = "";
@@ -64,6 +66,8 @@ namespace TaskPad
                 if (map.TryGetValue("codeTheme", out v) && v.Length > 0) s.CodeTheme = v;
                 if (map.TryGetValue("welcomeSeen", out v)) s.WelcomeSeen = v == "true";
                 if (map.TryGetValue("showWelcome", out v)) s.ShowWelcome = v == "true";
+                if (map.TryGetValue("trayEnabled", out v)) s.TrayEnabled = v != "false";
+                if (map.TryGetValue("inboxPath", out v)) s.InboxPath = v;
                 if (map.TryGetValue("autoSave", out v)) s.AutoSave = v != "false";
                 if (map.TryGetValue("autoSaveDelayMs", out v)) s.AutoSaveDelayMs = (int)D(v, s.AutoSaveDelayMs);
                 if (map.TryGetValue("imagePreviewHeight", out v)) s.ImagePreviewHeight = Math.Max(0, D(v, s.ImagePreviewHeight));
@@ -101,6 +105,8 @@ namespace TaskPad
                     "fontSize=" + FontSize.ToString(ci),
                     "wordWrap=" + (WordWrap ? "true" : "false"),
                     "autoSave=" + (AutoSave ? "true" : "false"),
+                    "trayEnabled=" + (TrayEnabled ? "true" : "false"),
+                    "inboxPath=" + InboxPath,
                     "welcomeSeen=" + (WelcomeSeen ? "true" : "false"),
                     "showWelcome=" + (ShowWelcome ? "true" : "false"),
                     "codeTheme=" + CodeTheme,

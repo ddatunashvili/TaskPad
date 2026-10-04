@@ -175,12 +175,7 @@ namespace TaskPad
             _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
             _timer.Tick += (s, e) =>
             {
-                var now = DateTime.Now;
-                foreach (var d in Workspace.Docs.ToList())
-                    foreach (var it in Scan(d.Document))
-                        if (!it.Done && it.When > _lastTick && it.When <= now)
-                            Workspace.LastActive?.Toast("⏰ Due now: " + (it.Text.Length > 0 ? it.Text : d.Name), seconds: 12);
-                _lastTick = now;
+                Tray.CheckReminders();
                 foreach (var v in Workspace.AllViews) v.Editor.TextArea.TextView.Redraw();
                 foreach (var w in Workspace.Windows) w.UpdateStats();
             };

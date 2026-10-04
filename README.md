@@ -47,6 +47,18 @@ right-click menu and turns simple markers into checkboxes, badges and colours �
 [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments) style —
 while the file on disk stays plain text you can open anywhere.
 
+## Agenda, reminders and quick capture
+
+- **Agenda** — the sidebar's **Agenda** tab (Ctrl+Shift+A, or click the task counter in the status bar) lists every
+  task with a `due:` from the open folder, your open notes and the Inbox, grouped **Overdue / Today / Tomorrow /
+  This week / Later**, with live countdowns. Tick tasks right there; click one to jump to it.
+- **Reminders** — TaskPad lives in the tray: closing the last window keeps it running, and a Windows notification
+  pops up when a deadline arrives (and 15 minutes before timed ones). Click it to open the task. Tray menu: Open,
+  Quick capture, Agenda, Start with Windows, Quit.
+- **Quick capture** — press **Win+Alt+N** anywhere (falls back to Ctrl+Alt+N / Ctrl+Alt+Space if taken), type
+  `call mom due:+2h`, Enter. It lands in `Documents\TaskPad\Inbox.task` (`inboxPath=` to change); Ctrl+Enter also opens it.
+- `⋯` → Settings: **Keep running in the tray**, **Start with Windows**.
+
 ## Smart typing
 
 Type `[]` and it becomes a checkbox. Enter continues the list, Enter twice ends it. Click a box to tick it;
@@ -230,6 +242,8 @@ Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl
 | <kbd>Ctrl</kbd>+<kbd>N</kbd>/<kbd>O</kbd>/<kbd>S</kbd>/<kbd>W</kbd>, <kbd>Ctrl</kbd>+<kbd>Tab</kbd> | the usual |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> | reopen last closed file (↺ button lists them all) |
 | <kbd>Ctrl</kbd>+<kbd>B</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd> | toggle explorer / open folder |
+| <kbd>Win</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd> | quick capture (from anywhere) |
+| <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>A</kbd> | agenda |
 | <kbd>F1</kbd> | cheat sheet |
 
 Files auto-save one second after you stop typing (toggle with `⋯` → **Auto save**, or `autoSave=false`) and reload when changed on disk.

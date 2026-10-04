@@ -146,6 +146,7 @@ namespace TaskPad
         public static void Restart()
         {
             var files = Workspace.Docs.Where(d => d.Path != null).Select(d => "\"" + d.Path + "\"").Distinct().ToList();
+            bool trayOnly = Workspace.Windows.Count == 0;
             if (Session.Enabled)
             {
                 // the session (incl. unsaved text) brings everything back; no prompts
@@ -157,6 +158,7 @@ namespace TaskPad
             if (Workspace.Windows.Count > 0) { Session.Quitting = false; return; } // user cancelled a save prompt
             Program.ReleaseSingleInstance();
             if (Program.Standalone) files.Insert(0, "--standalone");
+            if (trayOnly) files.Insert(0, "--tray");
             Process.Start(new ProcessStartInfo(ExePath, string.Join(" ", files)) { UseShellExecute = false });
             Application.Current.Shutdown();
         }

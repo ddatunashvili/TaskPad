@@ -101,6 +101,12 @@ namespace TaskPad
 
         public void ToggleExplorer() => SetExplorerVisible(!ExplorerVisible);
 
+        public void ShowAgenda()
+        {
+            SetExplorerVisible(true);
+            Explorer.ShowAgenda(true);
+        }
+
         /// Opens a folder as the project in the sidebar (a new window if this one already shows another folder).
         public void OpenFolder(string dir)
         {
@@ -223,6 +229,9 @@ namespace TaskPad
             tasks.Children.Add(_stTasks);
             DockPanel.SetDock(tasks, Dock.Left);
             status.Children.Add(tasks);
+            _stTasks.Cursor = Cursors.Hand;
+            _stTasks.ToolTip = "Open the agenda (Ctrl+Shift+A)";
+            _stTasks.MouseLeftButtonUp += (s, e) => ShowAgenda();
             _stInfo.Margin = new Thickness(0, 0, 12, 0);
             DockPanel.SetDock(_stInfo, Dock.Right);
             status.Children.Add(_stInfo);
@@ -678,6 +687,8 @@ namespace TaskPad
             Item(m, "New window", "Ctrl+Shift+N", () => NewWindow());
             Item(m, "Open…", "Ctrl+O", OpenDialog);
             Item(m, "Open Folder…", "Ctrl+Shift+O", () => { SetExplorerVisible(true); Explorer.PickFolder(); });
+            Item(m, "Quick capture…", Tray.HotkeyText, QuickCapture.Open);
+            Item(m, "Agenda", "Ctrl+Shift+A", ShowAgenda);
             var recent = Sub("Recently closed");
             var closed = Recent.List();
             if (closed.Count == 0) recent.Items.Add(new MenuItem { Header = "Nothing closed yet", IsEnabled = false });
@@ -746,6 +757,14 @@ namespace TaskPad
             Item(set, "Install updates automatically", null, () => { st.AutoUpdate = st.AutoUpdate == "auto" ? "ask" : "auto"; st.Save(); }, st.AutoUpdate == "auto");
             Item(set, "Explorer right-click menu", null, () => { if (Shell.IsRegistered) Shell.Unregister(true); else Shell.Register(true); }, Shell.IsRegistered);
             Item(set, "Show welcome page at startup", null, () => { st.ShowWelcome = !st.ShowWelcome; st.Save(); }, st.ShowWelcome);
+            Item(set, "Keep running in the tray", null, () =>
+            {
+                st.TrayEnabled = !st.TrayEnabled;
+                st.Save();
+                if (st.TrayEnabled) Tray.Start();
+                else { Tray.Stop(); Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose; }
+            }, st.TrayEnabled);
+            Item(set, "Start with Windows", null, () => Tray.SetStartWithWindows(!Tray.StartsWithWindows), Tray.StartsWithWindows);
             set.Items.Add(new Separator());
             Item(set, "Open settings file…", null, () =>
             {
@@ -877,6 +896,7 @@ namespace TaskPad
             else if (ctrlShift && key == Key.M) MoveToNewWindow(ActiveTab);
             else if (ctrlShift && key == Key.T) Recent.ReopenLast(this);
             else if (ctrl && key == Key.B) ToggleExplorer();
+            else if (ctrlShift && key == Key.A) ShowAgenda();
             else if (ctrlShift && key == Key.O) { SetExplorerVisible(true); Explorer.PickFolder(); }
             else if (ctrl && (key == Key.OemPlus || key == Key.Add)) Workspace.Zoom(+1);
             else if (ctrl && (key == Key.OemMinus || key == Key.Subtract)) Workspace.Zoom(-1);

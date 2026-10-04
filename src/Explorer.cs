@@ -35,6 +35,11 @@ namespace TaskPad
         }
 
         readonly TaskWindow _owner;
+        AgendaPanel _agenda;
+        Grid _filesView;
+        FrameworkElement _actions;
+        TextBlock _tabFiles, _tabAgenda;
+        public bool AgendaShown => _agenda != null && _agenda.Visibility == Visibility.Visible;
         readonly ObservableCollection<Node> _items = new ObservableCollection<Node>();
         readonly ListBox _list;
         readonly TextBlock _title = new TextBlock();
@@ -83,6 +88,16 @@ namespace TaskPad
             _title.TextTrimming = TextTrimming.CharacterEllipsis;
             head.Children.Add(_title);
             DockPanel.SetDock(head, Dock.Top);
+            _actions = head;   // the whole header row hides in agenda mode
+
+            // Files | Agenda switch
+            var tabs = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(12, 6, 0, 0) };
+            _tabFiles = TabLabel("FILES", () => ShowAgenda(false));
+            _tabAgenda = TabLabel("AGENDA", () => ShowAgenda(true));
+            tabs.Children.Add(_tabFiles);
+            tabs.Children.Add(_tabAgenda);
+            DockPanel.SetDock(tabs, Dock.Top);
+            Children.Add(tabs);
             Children.Add(head);
 
             // empty state
@@ -120,7 +135,10 @@ namespace TaskPad
             };
             _list.MouseRightButtonUp += (s, e) => { ShowMenu(ItemAt(e.OriginalSource as DependencyObject)); e.Handled = true; };
             _list.KeyDown += OnKey;
-            Children.Add(new Grid { Children = { _list, _empty } });
+            _filesView = new Grid { Children = { _list, _empty } };
+            _agenda = new AgendaPanel(_owner) { Visibility = Visibility.Collapsed };
+            Children.Add(new Grid { Children = { _filesView, _agenda } });
+            UpdateTabs();
 
             _refresh = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
             _refresh.Tick += (s, e) => { _refresh.Stop(); Refresh(); };
@@ -159,8 +177,37 @@ namespace TaskPad
   </Setter.Value></Setter>
 </Style>");
             _title.Foreground = Theme.FgDim;
+            if (_tabFiles != null && _filesView != null) UpdateTabs();
             Rebuild();
         }
+
+        TextBlock TabLabel(string text, Action click)
+        {
+            var t = new TextBlock { Text = text, FontFamily = new FontFamily("Segoe UI"), FontSize = 11, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 16, 0), Cursor = Cursors.Hand, Padding = new Thickness(0, 2, 0, 4) };
+            t.MouseLeftButtonUp += (s, e) => click();
+            return t;
+        }
+
+        void UpdateTabs()
+        {
+            bool a = AgendaShown;
+            _tabFiles.Foreground = a ? Theme.FgDim : Theme.Fg;
+            _tabAgenda.Foreground = a ? Theme.Fg : Theme.FgDim;
+            _tabFiles.TextDecorations = a ? null : TextDecorations.Underline;
+            _tabAgenda.TextDecorations = a ? TextDecorations.Underline : null;
+            _filesView.Visibility = a ? Visibility.Collapsed : Visibility.Visible;
+            _actions.Visibility = a ? Visibility.Collapsed : Visibility.Visible;
+            _title.Visibility = a ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public void ShowAgenda(bool on)
+        {
+            _agenda.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+            UpdateTabs();
+            if (on) _agenda.Refresh();
+        }
+
+        public void PokeAgenda() => _agenda?.Poke();
 
         static Node ItemAt(DependencyObject d)
         {
@@ -224,7 +271,7 @@ namespace TaskPad
             try
             {
                 _watcher = new FileSystemWatcher(_root) { IncludeSubdirectories = true, NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName };
-                FileSystemEventHandler h = (s, e) => Dispatcher.BeginInvoke(new Action(() => { _refresh.Stop(); _refresh.Start(); }));
+                FileSystemEventHandler h = (s, e) => Dispatcher.BeginInvoke(new Action(() => { _refresh.Stop(); _refresh.Start(); PokeAgenda(); }));
                 _watcher.Created += h;
                 _watcher.Deleted += h;
                 _watcher.Renamed += (s, e) => Dispatcher.BeginInvoke(new Action(() => { _refresh.Stop(); _refresh.Start(); }));
