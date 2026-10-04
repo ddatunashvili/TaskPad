@@ -765,7 +765,19 @@ namespace TaskPad
             Background = Theme.Chrome;
             BorderBrush = Theme.ChromeBorder;
             BorderThickness = new Thickness(1, 0, 0, 0);
-            Child = _canvas;
+            // drag the left edge to resize (like the explorer); the width is shared by all comment panels
+            var grip = new Thumb { Width = 6, HorizontalAlignment = HorizontalAlignment.Left, Cursor = Cursors.SizeWE, Opacity = 0, Margin = new Thickness(-3, 0, 0, 0) };
+            grip.DragDelta += (s, e) => Resize(Width - e.HorizontalChange);
+            grip.DragCompleted += (s, e) =>
+            {
+                Workspace.Settings.CommentMarginWidth = Width;
+                Workspace.Settings.Save();
+                foreach (var v in Workspace.AllViews) if (v.Margin != this) v.Margin.Resize(Width);
+            };
+            var layers = new Grid();
+            layers.Children.Add(_canvas);
+            layers.Children.Add(grip);
+            Child = layers;
 
             _rebuild = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _rebuild.Tick += (s, e) => { _rebuild.Stop(); Rebuild(); };
@@ -777,6 +789,14 @@ namespace TaskPad
             IsVisibleChanged += (s, e) => { if (IsVisible) Rebuild(); };
             _canvas.MouseWheel += (s, e) => ed.ScrollToVerticalOffset(ed.VerticalOffset - e.Delta); // scroll the note from the margin
             ApplyMode();
+        }
+
+        public void Resize(double width)
+        {
+            Width = Math.Max(200, Math.Min(900, width));
+            foreach (var c in _cards) c.Width = Width - 22;
+            foreach (var t in _canvas.Children.OfType<TextBlock>()) t.Width = Width - 32;
+            Layout();
         }
 
         public void ApplyMode()

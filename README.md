@@ -24,7 +24,8 @@
 **Installer** — run `TaskPad-Setup.exe`. It installs for your user only (no admin) to
 `%LOCALAPPDATA%\Programs\TaskPad`, adds a Start Menu shortcut, optionally a Desktop shortcut, the Explorer
 right-click entries and an **Open with** entry for `.txt`, `.md`, `.todo`, `.log`. Uninstall from
-**Settings → Apps** like any other app. Running the setup again updates in place.
+**Settings → Apps** like any other app. Running the setup again updates in place; if TaskPad is open, the setup offers to
+close it (tabs and unsaved text are kept) and reopens it afterwards.
 
 Silent install / uninstall: `TaskPad-Setup.exe --install --quiet` and
 `%LOCALAPPDATA%\Programs\TaskPad\TaskPad.exe --uninstall --quiet`.
@@ -73,7 +74,7 @@ Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) �
 ### Google Docs-style margin
 
 Comments show in a panel on the right by default; the right-panel icon in the tab bar (or `⋯` → **Comments panel**) opens/closes it — when closed, hover the highlighted text instead.
-Every thread becomes a card aligned with its line. Reply in place (Enter to send), edit ✎ or delete ✕ single messages,
+Every thread becomes a card aligned with its line; drag the panel's left edge to resize it. Reply in place (Enter to send), edit ✎ or delete ✕ single messages,
 **✓ Resolve** to remove the thread. Your name comes from `author=` in the ini (default: Windows user name).
 
 <p align="center"><img src="docs/margin-comments.png" alt="Comments in the right margin" width="880"></p>

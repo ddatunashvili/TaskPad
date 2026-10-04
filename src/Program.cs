@@ -15,7 +15,7 @@ namespace TaskPad
     public static class Program
     {
         // TASKPAD_INSTANCE lets a second, separate copy run (testing)
-        static readonly string InstanceId = "TaskPad-" + Environment.UserName + (Environment.GetEnvironmentVariable("TASKPAD_INSTANCE") ?? "");
+        public static readonly string InstanceId = "TaskPad-" + Environment.UserName + (Environment.GetEnvironmentVariable("TASKPAD_INSTANCE") ?? "");
         static Mutex _mutex;
         public static bool Standalone;
 
@@ -63,7 +63,11 @@ namespace TaskPad
                     case "--install":
                         if (args.Any(x => x.Equals("--quiet", StringComparison.OrdinalIgnoreCase)))
                         {
+                            // silent: close running copies (tabs are kept), install, reopen them
+                            bool wasRunning = Installer.Running().Count > 0;
+                            if (wasRunning) Installer.CloseRunning(15000, force: true);
                             Installer.Install(new Installer.Options { Launch = false });
+                            if (wasRunning) Installer.LaunchInstalled();
                             return 0;
                         }
                         return Installer.RunSetup();
@@ -168,6 +172,7 @@ namespace TaskPad
                             var paths = msg.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
                             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
                             {
+                                if (paths.Length == 1 && paths[0] == Installer.QuitMessage) { Updater.QuitAll(); return; }
                                 var w = Workspace.LastActive != null && Workspace.LastActive.IsVisible ? Workspace.LastActive : Workspace.Windows.LastOrDefault(x => x.IsVisible);
                                 if (w == null) { w = new TaskWindow(); w.Show(); }
                                 w.ReceiveFromOtherInstance(paths);

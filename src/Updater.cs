@@ -130,6 +130,19 @@ namespace TaskPad
         }
 
         /// Closes every window (saving / asking as usual) and starts the new exe with the same files.
+        /// Closes every window without prompts; the session keeps all tabs and unsaved text (used by the installer).
+        public static void QuitAll()
+        {
+            if (Session.Enabled)
+            {
+                Session.Save();
+                Session.Quitting = true;
+            }
+            foreach (var w in Workspace.Windows.ToList()) w.Close();
+            if (Workspace.Windows.Count > 0) { Session.Quitting = false; return; }
+            Application.Current.Shutdown();
+        }
+
         public static void Restart()
         {
             var files = Workspace.Docs.Where(d => d.Path != null).Select(d => "\"" + d.Path + "\"").Distinct().ToList();

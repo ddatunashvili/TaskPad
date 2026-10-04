@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +31,46 @@ namespace TaskPad
         static string DesktopLink => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "TaskPad.lnk");
 
         public static bool IsInstalled => File.Exists(InstalledExe);
+
+        public const string QuitMessage = "--quit-all";
+
+        /// Running TaskPad processes (any copy, any folder), not counting this setup.
+        public static List<Process> Running()
+        {
+            int self = Process.GetCurrentProcess().Id;
+            return Process.GetProcessesByName("TaskPad").Where(p => p.Id != self).ToList();
+        }
+
+        /// Asks running copies to quit the safe way (files saved, unsaved text kept in the session, no prompts),
+        /// then waits. Returns true when none are left.
+        public static bool CloseRunning(int timeoutMs, bool force)
+        {
+            // 1) the main copy listens on a pipe: send it the quit request
+            try
+            {
+                using (var c = new System.IO.Pipes.NamedPipeClientStream(".", Program.InstanceId, System.IO.Pipes.PipeDirection.Out))
+                {
+                    c.Connect(1500);
+                    var data = Encoding.UTF8.GetBytes(QuitMessage);
+                    c.Write(data, 0, data.Length);
+                }
+            }
+            catch { }
+            var until = DateTime.Now.AddMilliseconds(timeoutMs);
+            System.Threading.Thread.Sleep(800);
+            // 2) other copies (e.g. separate portable ones): ask their windows to close
+            foreach (var p in Running()) { try { p.CloseMainWindow(); } catch { } }
+            while (DateTime.Now < until && Running().Count > 0) System.Threading.Thread.Sleep(250);
+            if (Running().Count == 0) return true;
+            if (!force) return false;
+            foreach (var p in Running()) { try { p.Kill(); p.WaitForExit(3000); } catch { } }
+            return Running().Count == 0;
+        }
+
+        public static void LaunchInstalled()
+        {
+            try { Process.Start(new ProcessStartInfo(InstalledExe) { UseShellExecute = true, WorkingDirectory = InstallDir }); } catch { }
+        }
 
         public static bool IsSetupLaunch() =>
             Path.GetFileNameWithoutExtension(SelfPath).IndexOf("setup", StringComparison.OrdinalIgnoreCase) >= 0 &&
@@ -185,6 +228,8 @@ namespace TaskPad
             readonly CheckBox _menu = Check("Add \"Open with TaskPad\" to the Explorer right-click menu", true);
             readonly CheckBox _openWith = Check("List TaskPad under \"Open with\" for .txt, .md, .todo, .log", true);
             readonly CheckBox _launch = Check("Start TaskPad when done", true);
+            readonly CheckBox _closeRunning = Check("Close TaskPad now and reopen it after updating (your tabs and unsaved text are kept)", true);
+            readonly Border _runningNote = new Border();
             readonly TextBlock _status = new TextBlock { Foreground = Theme.FgDim, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0) };
             readonly Border _install, _cancel;
             bool _done;
@@ -238,6 +283,25 @@ namespace TaskPad
                 stack.Children.Add(_openWith);
                 stack.Children.Add(_desktop);
                 stack.Children.Add(_launch);
+                // running copies: offer to close them (otherwise the update applies on their next start)
+                var running = Running().Count;
+                if (running > 0)
+                {
+                    var note = new StackPanel();
+                    note.Children.Add(new TextBlock
+                    {
+                        Text = running == 1 ? "TaskPad is open right now." : $"{running} TaskPad copies are open right now.",
+                        Foreground = Theme.Todo, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 4),
+                    });
+                    note.Children.Add(_closeRunning);
+                    _runningNote.Child = note;
+                    _runningNote.Margin = new Thickness(0, 12, 0, 0);
+                    _runningNote.Padding = new Thickness(10, 8, 10, 6);
+                    _runningNote.CornerRadius = new CornerRadius(6);
+                    _runningNote.BorderThickness = new Thickness(1);
+                    _runningNote.BorderBrush = Theme.Todo;
+                    stack.Children.Add(_runningNote);
+                }
                 stack.Children.Add(_status);
                 stack.Children.Add(buttons);
                 Content = stack;
@@ -249,8 +313,26 @@ namespace TaskPad
                 if (_done) { Close(); return; }
                 var o = new Options { Desktop = _desktop.IsChecked == true, ContextMenu = _menu.IsChecked == true, OpenWith = _openWith.IsChecked == true, Launch = _launch.IsChecked == true };
                 _install.IsEnabled = false;
-                _status.Text = "Installing…";
-                Task.Run(() => Install(o)).ContinueWith(t =>
+                bool closeFirst = _closeRunning.IsChecked == true && Running().Count > 0;
+                bool reopen = false;
+                _status.Text = closeFirst ? "Closing TaskPad…" : "Installing…";
+                Task.Run(() =>
+                {
+                    if (closeFirst)
+                    {
+                        bool closed = CloseRunning(12000, force: false);
+                        if (!closed)
+                        {
+                            var answer = Dispatcher.Invoke(() => MessageBox.Show(this,
+                                "Some TaskPad windows didn't close (maybe waiting for an answer to a question).\n\nForce them to close? Unsaved text in them may be lost.",
+                                "TaskPad Setup", MessageBoxButton.YesNo, MessageBoxImage.Warning));
+                            if (answer == MessageBoxResult.Yes) CloseRunning(1000, force: true);
+                        }
+                        reopen = true;
+                        Dispatcher.Invoke(() => _status.Text = "Installing…");
+                    }
+                    Install(o);
+                }).ContinueWith(t =>
                 {
                     if (t.IsFaulted)
                     {
@@ -265,9 +347,9 @@ namespace TaskPad
                     ((TextBlock)_install.Child).Text = "Done";
                     _install.IsEnabled = true;
                     _cancel.Visibility = Visibility.Collapsed;
-                    if (o.Launch)
+                    if (o.Launch || reopen)
                     {
-                        try { Process.Start(new ProcessStartInfo(InstalledExe) { UseShellExecute = true, WorkingDirectory = InstallDir }); } catch { }
+                        LaunchInstalled();   // restores every tab that was open before
                         Close();
                     }
                 }, TaskScheduler.FromCurrentSynchronizationContext());
@@ -282,7 +364,7 @@ namespace TaskPad
                 };
                 var mark = new TextBlock { Text = "✓", Foreground = Brushes.White, FontSize = 11, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, -1, 0, 0) };
                 box.Child = mark;
-                var label = new TextBlock { Text = text, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
+                var label = new TextBlock { Text = text, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 400 };
                 var sp = new StackPanel { Orientation = Orientation.Horizontal };
                 sp.Children.Add(box);
                 sp.Children.Add(label);
