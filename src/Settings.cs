@@ -23,7 +23,7 @@ namespace TaskPad
         public double LeftMargin = 28;
         public double ImagePreviewHeight = 0;   // 0 = compact chip, >0 = inline thumbnail height
         public double CommentWidth = 360, CommentHeight = 200;
-        public string CommentsMode = "hover";      // hover | margin
+        public bool CommentPanel = true;           // comments shown in a panel on the right (off = hover cards)
         public double CommentMarginWidth = 300;
         public string Author = "";                 // name on comments; empty = Windows user name
         public string AutoUpdate = "ask";          // ask | auto | off
@@ -66,7 +66,7 @@ namespace TaskPad
                 if (map.TryGetValue("imagePreviewHeight", out v)) s.ImagePreviewHeight = Math.Max(0, D(v, s.ImagePreviewHeight));
                 if (map.TryGetValue("commentWidth", out v)) s.CommentWidth = D(v, s.CommentWidth);
                 if (map.TryGetValue("commentHeight", out v)) s.CommentHeight = D(v, s.CommentHeight);
-                if (map.TryGetValue("commentsMode", out v) && v.Length > 0) s.CommentsMode = v;
+                if (map.TryGetValue("commentPanel", out v)) s.CommentPanel = v != "false";
                 if (map.TryGetValue("commentMarginWidth", out v)) s.CommentMarginWidth = Math.Max(200, D(v, s.CommentMarginWidth));
                 if (map.TryGetValue("author", out v)) s.Author = v;
                 if (map.TryGetValue("autoUpdate", out v) && v.Length > 0) s.AutoUpdate = v;
@@ -108,7 +108,7 @@ namespace TaskPad
                     "imagePreviewHeight=" + ImagePreviewHeight.ToString(ci),
                     "commentWidth=" + CommentWidth.ToString(ci),
                     "commentHeight=" + CommentHeight.ToString(ci),
-                    "commentsMode=" + CommentsMode,
+                    "commentPanel=" + (CommentPanel ? "true" : "false"),
                     "commentMarginWidth=" + CommentMarginWidth.ToString(ci),
                     "author=" + Author,
                     "autoUpdate=" + AutoUpdate,

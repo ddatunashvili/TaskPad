@@ -43,6 +43,15 @@ namespace TaskPad
         FileSystemWatcher _watcher;
         readonly DispatcherTimer _refresh;
         string _root;
+        Border _closeButton;
+
+        /// "Close Folder": back to the empty state; nothing on disk changes.
+        public void CloseFolder()
+        {
+            Workspace.Settings.ExplorerFolder = "";
+            Workspace.Settings.Save();
+            Open(null);
+        }
 
         static readonly FontFamily Mdl2 = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets");
 
@@ -62,6 +71,8 @@ namespace TaskPad
             actions.Children.Add(HeadButton("", "Refresh", Refresh));
             actions.Children.Add(HeadButton("", "Collapse all", () => { _expanded.Clear(); Rebuild(); }));
             actions.Children.Add(HeadButton("", "Open another folder…", PickFolder));
+            _closeButton = HeadButton("", "Close folder", CloseFolder);
+            actions.Children.Add(_closeButton);
             DockPanel.SetDock(actions, Dock.Right);
             head.Children.Add(actions);
             _title.Foreground = Theme.FgDim;
@@ -195,7 +206,9 @@ namespace TaskPad
                 _root = null;
                 _items.Clear();
                 _title.Text = "EXPLORER";
+                _title.ToolTip = null;
                 _empty.Visibility = Visibility.Visible;
+                if (_closeButton != null) _closeButton.Visibility = Visibility.Collapsed;
                 return;
             }
             _root = Path.GetFullPath(dir).TrimEnd('\\');
@@ -205,6 +218,7 @@ namespace TaskPad
             _title.Text = (Path.GetFileName(_root.TrimEnd('\\')) is string n && n.Length > 0 ? n : _root).ToUpperInvariant();
             _title.ToolTip = _root;
             _empty.Visibility = Visibility.Collapsed;
+            if (_closeButton != null) _closeButton.Visibility = Visibility.Visible;
             _expanded.Clear();
             Rebuild();
             try
@@ -323,6 +337,7 @@ namespace TaskPad
             m.Items.Add(new Separator());
             Item("Refresh", null, Refresh);
             Item("Open Folder…", null, PickFolder);
+            Item("Close Folder", null, CloseFolder);
             m.IsOpen = true;
         }
 

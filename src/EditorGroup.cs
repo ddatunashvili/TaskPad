@@ -23,7 +23,7 @@ namespace TaskPad
             Owner = owner;
             var bar = new Grid { Height = 36, Background = Theme.Chrome };
             bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            for (int i = 0; i < 5; i++) bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            for (int i = 0; i < 7; i++) bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var scroller = new ScrollViewer
             {
@@ -43,7 +43,10 @@ namespace TaskPad
             AddButton(bar, 2, "◫", "Split right (Ctrl+\\)", b => Owner.SplitActive(this, Dock.Right));
             AddButton(bar, 3, "✦", "Keywords (Ctrl+K)", b => KeywordsPopup.Show(b, () => Active?.Editor, () => Owner.ShowCheatSheet()));
             AddButton(bar, 4, "↺", "Recently closed (Ctrl+Shift+T reopens last)", b => Recent.ShowMenu(Owner, b));
-            AddButton(bar, 5, "⋯", "Menu", b => Owner.ShowMenu(b, this));
+            _explorerToggle = AddButton(bar, 5, "\uE90C", "Toggle file explorer (Ctrl+B)", b => Owner.ToggleExplorer(), mdl2: true);
+            _commentsToggle = AddButton(bar, 6, "\uE90D", "Toggle comments panel", b => Workspace.SetCommentPanel(!Comments.MarginMode), mdl2: true);
+            AddButton(bar, 7, "⋯", "Menu", b => Owner.ShowMenu(b, this));
+            Loaded += (s, e) => UpdateToggles();
 
             Bar = new Border { Child = bar, BorderBrush = Theme.ChromeBorder, BorderThickness = new Thickness(0, 0, 0, 1) };
             SetDock(Bar, Dock.Top);
@@ -54,24 +57,36 @@ namespace TaskPad
             PreviewMouseDown += (s, e) => Owner.SetActiveGroup(this);
         }
 
-        static void AddButton(Grid bar, int col, string glyph, string tip, Action<FrameworkElement> click)
+        TextBlock _explorerToggle, _commentsToggle;
+
+        /// Green when the panel is open.
+        public void UpdateToggles()
+        {
+            if (_explorerToggle == null || Owner?.Explorer == null) return;
+            _explorerToggle.Foreground = Owner.ExplorerVisible ? Theme.Accent : Theme.FgDim;
+            _commentsToggle.Foreground = Comments.MarginMode ? Theme.Accent : Theme.FgDim;
+        }
+
+        static TextBlock AddButton(Grid bar, int col, string glyph, string tip, Action<FrameworkElement> click, bool mdl2 = false)
         {
             var tb = new TextBlock
             {
                 Text = glyph,
                 Foreground = Theme.FgDim,
-                FontSize = glyph == "◫" ? 14 : 17,
-                FontFamily = new FontFamily("Segoe UI Symbol, Segoe UI"),
+                FontSize = mdl2 ? 14 : glyph == "◫" ? 14 : 17,
+                FontFamily = new FontFamily(mdl2 ? "Segoe Fluent Icons, Segoe MDL2 Assets" : "Segoe UI Symbol, Segoe UI"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, -2, 0, 0),
+                Margin = new Thickness(0, mdl2 ? 0 : -2, 0, 0),
             };
             var b = new Border { Width = 34, Background = Brushes.Transparent, Child = tb, ToolTip = tip, Cursor = Cursors.Hand };
-            b.MouseEnter += (s, e) => tb.Foreground = Theme.Fg;
-            b.MouseLeave += (s, e) => tb.Foreground = Theme.FgDim;
-            b.MouseLeftButtonUp += (s, e) => click(b);
+            Brush rest = null;
+            b.MouseEnter += (s, e) => { rest = tb.Foreground; tb.Foreground = Theme.Fg; };
+            b.MouseLeave += (s, e) => tb.Foreground = rest ?? Theme.FgDim;
+            b.MouseLeftButtonUp += (s, e) => { click(b); rest = tb.Foreground; };
             Grid.SetColumn(b, col);
             bar.Children.Add(b);
+            return tb;
         }
 
         public void Insert(TabView t, int index, bool activate = true)

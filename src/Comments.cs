@@ -21,7 +21,7 @@ namespace TaskPad
     {
         public static readonly Regex Markup = new Regex(@"\{==(?<t>.+?)==\}\{>>(?<c>.*?)<<\}|\{>>(?<c>.*?)<<\}", RegexOptions.Compiled);
 
-        public static bool MarginMode => Workspace.Settings.CommentsMode == "margin";
+        public static bool MarginMode => Workspace.Settings.CommentPanel;
 
         /// Finds the comment markup containing `offset`, if any.
         public static bool Find(TextDocument doc, int offset, out int start, out Match match)
@@ -781,7 +781,8 @@ namespace TaskPad
 
         public void ApplyMode()
         {
-            Visibility = Comments.MarginMode ? Visibility.Visible : Visibility.Collapsed;
+            // never for code files: they don't carry comments
+            Visibility = Comments.MarginMode && !Code.IsCodeFile(_ed.Document.FileName) ? Visibility.Visible : Visibility.Collapsed;
             if (IsVisible) Rebuild();
         }
 
@@ -796,6 +797,18 @@ namespace TaskPad
                 var card = new ThreadCard(_ed, start) { Width = Width - 22 };
                 _cards.Add(card);
                 _canvas.Children.Add(card);
+            }
+            if (_cards.Count == 0)
+            {
+                var hint = new TextBlock
+                {
+                    Text = "No comments yet.\nSelect text and press Ctrl+M\n(or 💬 Comment in the selection bar).",
+                    Foreground = Theme.FgDim, FontFamily = new FontFamily("Segoe UI"), FontSize = 12, TextWrapping = TextWrapping.Wrap,
+                    Width = Width - 32, LineHeight = 18,
+                };
+                Canvas.SetLeft(hint, 16);
+                Canvas.SetTop(hint, 14);
+                _canvas.Children.Add(hint);
             }
             _dirty = false;
             Layout();

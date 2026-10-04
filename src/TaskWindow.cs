@@ -57,6 +57,7 @@ namespace TaskPad
         {
             Explorer.Visibility = _explorerEdge.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
             Workspace.Settings.ExplorerVisible = on;
+            foreach (var g in Groups) g.UpdateToggles();
         }
 
         public void ToggleExplorer() => SetExplorerVisible(!ExplorerVisible);
@@ -627,6 +628,7 @@ namespace TaskPad
             Item("New window", "Ctrl+Shift+N", () => NewWindow());
             Item("Open…", "Ctrl+O", OpenDialog);
             Item("Open Folder…", "Ctrl+Shift+O", () => { SetExplorerVisible(true); Explorer.PickFolder(); });
+            Item("Close Folder", null, Explorer.CloseFolder).IsEnabled = Explorer.Root != null;
             Item("Explorer sidebar", "Ctrl+B", ToggleExplorer, ExplorerVisible);
             Item("Recently closed…", "Ctrl+Shift+T", () => Recent.ShowMenu(this, anchor));
             Item("Save", "Ctrl+S", () => tab?.Doc.Save(this, false));
@@ -655,7 +657,7 @@ namespace TaskPad
             Item("Zoom in", "Ctrl+=", () => Workspace.Zoom(+1));
             Item("Zoom out", "Ctrl+-", () => Workspace.Zoom(-1));
             Item("Reset zoom", "Ctrl+0", () => Workspace.Zoom(0));
-            Item("Comments in right margin", null, () => Workspace.SetCommentsMode(Comments.MarginMode ? "hover" : "margin"), Comments.MarginMode);
+            Item("Comments panel", null, () => Workspace.SetCommentPanel(!Comments.MarginMode), Comments.MarginMode);
             m.Items.Add(new Separator());
             if (Shell.IsRegistered) Item("Remove from Explorer right-click menu", null, () => Shell.Unregister(true));
             else Item("Add to Explorer right-click menu", null, () => Shell.Register(true));

@@ -72,7 +72,7 @@ Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) �
 
 ### Google Docs-style margin
 
-Prefer comments beside the text? `⋯` → **Comments in right margin** (or `commentsMode=margin` in `TaskPad.ini`).
+Comments show in a panel on the right by default; the right-panel icon in the tab bar (or `⋯` → **Comments panel**) opens/closes it — when closed, hover the highlighted text instead.
 Every thread becomes a card aligned with its line. Reply in place (Enter to send), edit ✎ or delete ✕ single messages,
 **✓ Resolve** to remove the thread. Your name comes from `author=` in the ini (default: Windows user name).
 
@@ -85,7 +85,9 @@ Open a whole project folder: `⋯` → **Open Folder…** (Ctrl+Shift+O), right-
 in the status bar) shows files and folders with type icons (`.task`, `.txt`, Markdown, images, PDF, JS/TS/C#/JSON…)
 and updates as files change on disk. Click a file to open it (images open in the viewer, PDFs and other binaries in
 their default app). Right-click for **New File** (no extension = `.task`), **New Folder**, **Rename** (F2),
-**Delete** (to the Recycle Bin), **Reveal in File Explorer**, **Copy Path / Relative Path**. Drag the sidebar edge to resize.
+**Delete** (to the Recycle Bin), **Reveal in File Explorer**, **Copy Path / Relative Path**, **Close Folder** (also the ✕ in the
+sidebar header). Drag the sidebar edge to resize. The two panel icons at the right of the tab bar open/close the explorer
+(left) and the comments panel (right).
 
 Each tab also has a small folder button next to ✕ that opens the file's folder in Windows Explorer.
 

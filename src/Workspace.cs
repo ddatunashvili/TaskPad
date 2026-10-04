@@ -33,9 +33,11 @@ namespace TaskPad
             foreach (var v in AllViews) v.Editor.WordWrap = Settings.WordWrap;
         }
 
-        public static void SetCommentsMode(string mode)
+        public static void SetCommentPanel(bool on)
         {
-            Settings.CommentsMode = mode;
+            Settings.CommentPanel = on;
+            Settings.Save();
+            foreach (var w in Windows) foreach (var g in w.Groups) g.UpdateToggles();
             foreach (var v in AllViews)
             {
                 v.Margin.ApplyMode();
