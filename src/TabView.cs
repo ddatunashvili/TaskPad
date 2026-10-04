@@ -152,7 +152,18 @@ namespace TaskPad
             ta.LeftMargins.Add(new Rectangle { Width = st.LeftMargin, Fill = Brushes.Transparent });
 
             ta.TextView.LineTransformers.Add(new TaskColorizer());
-            ta.TextView.ElementGenerators.Add(new MarkerGenerator());
+            ta.TextView.ElementGenerators.Add(new MarkerGenerator(() => ta.Caret.Line));
+            // re-render the old and new caret lines so heading "#" markers show only while editing that line
+            int lastCaretLine = 1;
+            ta.Caret.PositionChanged += (s, e) =>
+            {
+                int now = ta.Caret.Line;
+                if (now == lastCaretLine) return;
+                var doc = ed.Document;
+                if (lastCaretLine <= doc.LineCount) ta.TextView.Redraw(doc.GetLineByNumber(lastCaretLine));
+                ta.TextView.Redraw(doc.GetLineByNumber(now));
+                lastCaretLine = now;
+            };
             ta.TextView.ElementGenerators.Add(new ImageGenerator(doc));
             SmartEditing.Attach(ed);
             SelectionToolbar.Attach(ed);

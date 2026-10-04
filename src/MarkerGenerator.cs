@@ -18,6 +18,13 @@ namespace TaskPad
         static readonly Geometry CrossGeo = Geometry.Parse("M 0,0 L 8,8 M 8,0 L 0,8");
 
         double _lineH, _baseline, _charW, _em;
+        readonly Func<int> _caretLine;
+
+        /// `caretLine`: heading markers ("## ") stay visible on the caret's line so the level can be edited.
+        public MarkerGenerator(Func<int> caretLine = null) { _caretLine = caretLine; }
+
+        bool Skip(Tok t, ICSharpCode.AvalonEdit.Document.DocumentLine line) =>
+            t.Kind == TokKind.HeadingMark && _caretLine != null && _caretLine() == line.LineNumber;
 
         public override int GetFirstInterestedOffset(int startOffset)
         {
@@ -25,6 +32,7 @@ namespace TaskPad
             var info = LineParser.Parse(CurrentContext.Document.GetText(line));
             foreach (var t in info.Tokens)
             {
+                if (Skip(t, line)) continue;
                 int abs = line.Offset + t.Start;
                 if (abs >= startOffset) return abs;
             }
@@ -44,12 +52,13 @@ namespace TaskPad
 
             foreach (var t in info.Tokens)
             {
-                if (line.Offset + t.Start != offset) continue;
+                if (line.Offset + t.Start != offset || Skip(t, line)) continue;
                 FrameworkElement el;
                 switch (t.Kind)
                 {
                     case TokKind.Rule: el = Rule(doc.GetCharAt(offset), tv.ActualWidth - info.Indent * _charW - 40); break;
-                    case TokKind.HiddenBullet: el = Host(new Canvas(), 0); break;
+                    case TokKind.HiddenBullet:
+                    case TokKind.HeadingMark: el = Host(new Canvas(), 0); break;
                     case TokKind.Checkbox: el = Checkbox(doc, offset, info.Check, info.Indent > 0); break;
                     default: el = TagGlyph(info.Tag, t.Length); break;
                 }

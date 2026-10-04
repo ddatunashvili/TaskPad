@@ -4,7 +4,7 @@ namespace TaskPad
 {
     public enum Tag { None, Bang, Question, Star, Arrow, Back, Dash, Slash, Todo }
     public enum Check { None, Open, Done, Doing, Cancelled }
-    public enum TokKind { Rule, HiddenBullet, Checkbox, Tag }
+    public enum TokKind { Rule, HiddenBullet, Checkbox, Tag, HeadingMark }
 
     public struct Tok
     {
@@ -66,6 +66,7 @@ namespace TaskPad
                 if (h <= 6 && i + h < n && t[i + h] == ' ')
                 {
                     info.Heading = h;
+                    info.Tokens.Add(new Tok(TokKind.HeadingMark, i, Skip(t, i + h) - i)); // "## " (hidden)
                     info.ContentStart = Skip(t, i + h);
                     return info;
                 }
