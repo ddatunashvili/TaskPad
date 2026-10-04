@@ -54,6 +54,27 @@ Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) �
 
 <p align="center"><img src="docs/comments.gif" alt="Adding and editing a comment" width="880"></p>
 
+### Google Docs-style margin
+
+Prefer comments beside the text? `⋯` → **Comments in right margin** (or `commentsMode=margin` in `TaskPad.ini`).
+Every thread becomes a card aligned with its line. Reply in place (Enter to send), edit ✎ or delete ✕ single messages,
+**✓ Resolve** to remove the thread. Your name comes from `author=` in the ini (default: Windows user name).
+
+<p align="center"><img src="docs/margin-comments.png" alt="Comments in the right margin" width="880"></p>
+
+## Colours and links
+
+Colour codes like `#7C6CF6`, `#fff` or `#22D3EE80` get a live swatch. <kbd>Ctrl</kbd>+click a colour code or a link
+to copy it — a toast confirms, and for links offers **Open ↗**.
+
+## Export to PDF
+
+`⋯` → **Export to PDF…** or <kbd>Ctrl</kbd>+<kbd>P</kbd>. Produces a clean, print-friendly PDF: checkboxes, badges,
+headings, colour swatches, embedded images, and comments as numbered notes. Uses Microsoft Edge (built into Windows)
+in the background — nothing to install.
+
+<p align="center"><img src="docs/pdf-export.png" alt="Exported PDF" width="560"></p>
+
 ## Images
 
 <kbd>Ctrl</kbd>+<kbd>V</kbd> a screenshot or drop image files. They are saved to `images/` next to your file and
@@ -94,7 +115,7 @@ Type these at the start of a line:
 | `/` | ✓ finished note |
 | `-` | • bullet |
 | `1.` | numbered list |
-| `#` `##` `###` | headings |
+| `#` … `######` | headings h1–h6 |
 | `Section:` | section title |
 | `---` / `===` | horizontal line |
 | `// !` | Better Comments prefix also works |
@@ -116,6 +137,8 @@ Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> | delete line |
 | <kbd>Ctrl</kbd>+<kbd>K</kbd> | keywords picker |
 | <kbd>Ctrl</kbd>+<kbd>M</kbd> | comment on selection |
+| <kbd>Ctrl</kbd>+<kbd>P</kbd> | export to PDF |
+| <kbd>Ctrl</kbd>+click | copy colour code / link |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd> | paste text or an image |
 | <kbd>Ctrl</kbd>+<kbd>\\</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>\\</kbd> | split right / down |
 | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> | move tab to a new window |
@@ -127,6 +150,13 @@ Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl
 | <kbd>F1</kbd> | cheat sheet |
 
 Files auto-save one second after you stop typing and reload when changed on disk.
+
+## Updates
+
+TaskPad checks GitHub for a new release at start-up (and every few hours) and shows **Update now**. It downloads the
+new `TaskPad.exe`, verifies its SHA-256 against the release notes, swaps it in place and restarts with your files.
+Turn on `⋯` → **Auto-install updates** to skip the prompt, or set `autoUpdate=off` in `TaskPad.ini`.
+(Needs write access to the folder the exe is in; otherwise it links to the download page.)
 
 ## Explorer right-click menu
 
@@ -142,7 +172,8 @@ It is per-user (HKCU), so no admin rights are needed. On Windows 11 the entries 
 ## Settings
 
 `TaskPad.ini` is created next to the exe (portable). Options: `font`, `fontSize`, `wordWrap`,
-`autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`. Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
+`autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`, `commentsMode` (`hover`/`margin`),
+`commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`). Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
 for the intended look; it falls back to Cascadia Mono / Consolas.
 
 ## Build
