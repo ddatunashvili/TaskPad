@@ -24,6 +24,8 @@ namespace TaskPad
         public bool Maximized;
 
         string _path;
+        public string Dir => Path.GetDirectoryName(_path);
+        public bool RestoreSession = true;
 
         public static Settings Load()
         {
@@ -54,6 +56,7 @@ namespace TaskPad
                 if (map.TryGetValue("commentMarginWidth", out v)) s.CommentMarginWidth = Math.Max(200, D(v, s.CommentMarginWidth));
                 if (map.TryGetValue("author", out v)) s.Author = v;
                 if (map.TryGetValue("autoUpdate", out v) && v.Length > 0) s.AutoUpdate = v;
+                if (map.TryGetValue("restoreSession", out v)) s.RestoreSession = v != "false";
                 if (map.TryGetValue("leftMargin", out v)) s.LeftMargin = Math.Max(0, D(v, s.LeftMargin));
                 if (map.TryGetValue("indentSize", out v)) s.IndentSize = Math.Max(1, (int)D(v, s.IndentSize));
                 if (map.TryGetValue("left", out v)) s.Left = D(v, double.NaN);
@@ -88,6 +91,7 @@ namespace TaskPad
                     "commentMarginWidth=" + CommentMarginWidth.ToString(ci),
                     "author=" + Author,
                     "autoUpdate=" + AutoUpdate,
+                    "restoreSession=" + (RestoreSession ? "true" : "false"),
                     "left=" + Left.ToString(ci),
                     "top=" + Top.ToString(ci),
                     "width=" + Width.ToString(ci),

@@ -80,6 +80,7 @@ namespace TaskPad
             Tabs.Insert(index, t);
             Strip.Children.Insert(index, t.Header);
             t.Shift.X = 0;
+            Session.MarkDirty();
             if (activate) Activate(t);
             else t.Refresh();
         }
@@ -93,6 +94,7 @@ namespace TaskPad
             Strip.Children.Remove(t.Header);
             if (Body.Child == t.Root) Body.Child = null;
             t.Group = null;
+            Session.MarkDirty();
             if (Active == t)
             {
                 Active = null;

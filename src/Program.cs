@@ -14,7 +14,8 @@ namespace TaskPad
 {
     public static class Program
     {
-        static readonly string InstanceId = "TaskPad-" + Environment.UserName;
+        // TASKPAD_INSTANCE lets a second, separate copy run (testing)
+        static readonly string InstanceId = "TaskPad-" + Environment.UserName + (Environment.GetEnvironmentVariable("TASKPAD_INSTANCE") ?? "");
         static Mutex _mutex;
         public static bool Standalone;
 
@@ -108,11 +109,23 @@ namespace TaskPad
             Workspace.Settings = Settings.Load();
             SmartEditing.IndentSize = () => Workspace.Settings.IndentSize;
 
-            var win = new TaskWindow();
-            foreach (var f in files) win.OpenFile(f);
-            if (win.TabCount == 0) win.NewTab();
+            // bring back the last session (windows, splits, tabs, unsaved text), then add any files passed in
+            Session.Enabled = !standalone && Workspace.Settings.RestoreSession;
+            TaskWindow win;
+            if (Session.Restore())
+            {
+                win = Workspace.LastActive;
+                foreach (var f in files) win.OpenFile(f);
+                win.Activate();
+            }
+            else
+            {
+                win = new TaskWindow();
+                foreach (var f in files) win.OpenFile(f);
+                if (win.TabCount == 0) win.NewTab();
+                win.Show();
+            }
             if (!standalone) StartPipeServer();
-            win.Show();
             Updater.CleanupOld();
             if (!standalone) Updater.Start();
             return app.Run();

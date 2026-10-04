@@ -170,6 +170,10 @@ Inline: `@person`, `#tag`, `2026-10-04 14:30`, `` `code` `` and links (<kbd>Ctrl
 
 Files auto-save one second after you stop typing and reload when changed on disk.
 
+**Nothing is lost on close.** TaskPad remembers every window, split, tab and cursor, and keeps unsaved and
+untitled text in a `session` folder (saved continuously, so it even survives a crash). Close the app without
+being asked anything; next time everything is back exactly as you left it. Turn off with `restoreSession=false`.
+
 ## Updates
 
 TaskPad checks GitHub for a new release at start-up (and every few hours) and shows **Update now**. It downloads the
@@ -192,7 +196,7 @@ It is per-user (HKCU), so no admin rights are needed. On Windows 11 the entries 
 
 `TaskPad.ini` is created next to the exe (portable). Options: `font`, `fontSize`, `wordWrap`,
 `autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`, `commentsMode` (`hover`/`margin`),
-`commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`). Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
+`commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`), `restoreSession`. Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
 for the intended look; it falls back to Cascadia Mono / Consolas.
 
 ## Build

@@ -41,6 +41,7 @@ namespace TaskPad
             Document.TextChanged += (s, e) =>
             {
                 if (!Dirty) { Dirty = true; Raise(); }
+                Session.MarkDirty();
                 _autoSave.Stop();
                 _autoSave.Start();
             };

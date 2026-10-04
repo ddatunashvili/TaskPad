@@ -112,6 +112,7 @@ namespace TaskPad
             Closed += (s, e) =>
             {
                 Workspace.Windows.Remove(this);
+                Session.MarkDirty();
                 if (Workspace.Windows.Count == 0) ImageViewer.CloseAll();
                 if (Workspace.LastActive == this) Workspace.LastActive = Workspace.Windows.LastOrDefault();
             };
@@ -195,7 +196,15 @@ namespace TaskPad
             var group = new EditorGroup(this);
             bool horizontal = side == Dock.Left || side == Dock.Right;
             bool newFirst = side == Dock.Left || side == Dock.Top;
+            var placeholder = new Border();
+            Replace(target, placeholder);
+            var grid = SplitGrid(newFirst ? group : target, newFirst ? target : group, horizontal);
+            Replace(placeholder, grid);
+            return group;
+        }
 
+        static Grid SplitGrid(FrameworkElement a, FrameworkElement b, bool horizontal)
+        {
             var grid = new Grid();
             var splitter = new GridSplitter
             {
@@ -222,15 +231,70 @@ namespace TaskPad
                 Grid.SetRow(splitter, 1);
             }
 
-            Replace(target, grid);
-            var a = newFirst ? group : target;
-            var b = newFirst ? target : group;
             Place(a, horizontal, 0);
             Place(b, horizontal, 2);
             grid.Children.Add(a);
             grid.Children.Add(splitter);
             grid.Children.Add(b);
-            return group;
+            return grid;
+        }
+
+        /// Layout as text: groups are numbered in Groups order, e.g. "(H 0 (V 1 2))".
+        public string LayoutSpec()
+        {
+            int n = 0;
+            string Walk(UIElement e)
+            {
+                if (e is EditorGroup) return (n++).ToString();
+                if (e is Grid g)
+                {
+                    var parts = g.Children.OfType<FrameworkElement>().Where(c => !(c is GridSplitter))
+                        .OrderBy(c => Grid.GetColumn(c) + Grid.GetRow(c)).Select(c => Walk(c)).ToList();
+                    return $"({(g.ColumnDefinitions.Count == 3 ? "H" : "V")} {string.Join(" ", parts)})";
+                }
+                return "0";
+            }
+            return Walk(_root.Child);
+        }
+
+        /// Rebuilds the split layout from LayoutSpec(); returns the new groups in order.
+        public List<EditorGroup> ApplyLayout(string spec)
+        {
+            var groups = new List<EditorGroup>();
+            int i = 0;
+            FrameworkElement Parse()
+            {
+                while (i < spec.Length && spec[i] == ' ') i++;
+                if (i < spec.Length && spec[i] == '(')
+                {
+                    i++;
+                    bool h = spec[i] == 'H';
+                    i++;
+                    var a = Parse();
+                    var b = Parse();
+                    while (i < spec.Length && spec[i] != ')') i++;
+                    i++;
+                    return SplitGrid(a, b, h);
+                }
+                while (i < spec.Length && char.IsDigit(spec[i])) i++;
+                var g = new EditorGroup(this);
+                groups.Add(g);
+                return g;
+            }
+            try
+            {
+                var tree = Parse();
+                _root.Child = tree;
+            }
+            catch
+            {
+                groups.Clear();
+                var g = new EditorGroup(this);
+                groups.Add(g);
+                _root.Child = g;
+            }
+            ActiveGroup = groups[0];
+            return groups;
         }
 
         static void Place(UIElement e, bool horizontal, int index)
@@ -620,10 +684,16 @@ namespace TaskPad
         void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             var tabs = Groups.SelectMany(g => g.Tabs).ToList();
+            // Quitting (last window, or an update restart): files are saved, unsaved/untitled text is kept
+            // in the session backup and comes back next start — no prompts. Closing one of several windows still asks.
+            bool hotExit = Session.Enabled && (Session.Quitting || Workspace.Windows.Count == 1);
             foreach (var t in tabs)
             {
-                if (t.Doc.Views.All(v => v.Group?.Owner == this) && !t.Doc.ConfirmClose(this)) { e.Cancel = true; return; }
+                if (!t.Doc.Views.All(v => v.Group?.Owner == this)) continue;
+                if (hotExit) { if (t.Doc.Path != null && t.Doc.Dirty) t.Doc.Save(this, false); }
+                else if (!t.Doc.ConfirmClose(this)) { e.Cancel = true; return; }
             }
+            if (hotExit && !Session.Quitting && !Session.Restoring) Session.Save();
             foreach (var t in tabs) t.Detach();
 
             var st = Workspace.Settings;
