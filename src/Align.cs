@@ -44,14 +44,14 @@ namespace TaskPad
 
         /// Wraps `content` in the shared frame, centred on the capitals; `width` = frame width
         /// (null = content width + margins). `centreX` centres it horizontally inside `width`.
-        public static Canvas Host(FrameworkElement content, ITextRunConstructionContext ctx, double? width = null, bool centreX = false, double marginLeft = 0, double marginRight = 0)
+        public static Canvas Host(FrameworkElement content, ITextRunConstructionContext ctx, double? width = null, bool centreX = false, double marginLeft = 0, double marginRight = 0, double? centreSpan = null)
         {
             content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Frame(ctx, out double a, out double h);
             double cap = CapMiddle(ctx);
             double w = width ?? content.DesiredSize.Width + marginLeft + marginRight;
             var c = new Canvas { Width = w, Height = h, Background = Brushes.Transparent };
-            double left = centreX ? Math.Max(1, Math.Round((w - content.DesiredSize.Width) / 2)) : marginLeft;
+            double left = centreX ? Math.Max(1, Math.Round(((centreSpan ?? w) - content.DesiredSize.Width) / 2)) : marginLeft;
             Canvas.SetLeft(content, left);
             Canvas.SetTop(content, Math.Round(a - cap - content.DesiredSize.Height / 2));
             c.Children.Add(content);

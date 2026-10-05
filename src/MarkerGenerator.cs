@@ -75,7 +75,7 @@ namespace TaskPad
                     case TokKind.HiddenBullet: el = Host(new Canvas(), 0); break;
                     case TokKind.HeadingMark: el = HeadingSpacer(info.Heading, t.Length, _caretLine != null && _caretLine() == line.LineNumber); break;
                     case TokKind.Checkbox: el = Checkbox(doc, offset, info.Check, info.Indent > 0); break;
-                    default: el = TagGlyph(info.Tag, t.Length); break;
+                    default: el = TagGlyph(info.Tag, t.Length, info.TagLen); break;
                 }
                 if (t.Kind == TokKind.Checkbox || t.Kind == TokKind.Tag || t.Kind == TokKind.HeadingMark)
                 {
@@ -101,7 +101,7 @@ namespace TaskPad
         /// half below) so task and icon lines get breathing room; the line grows to fit it.
         /// Wraps a marker visual in the shared inline frame (see Align): centred on the capitals,
         /// with markerSpacing of breathing room so task and icon lines get a little more height.
-        FrameworkElement Host(FrameworkElement child, double width) => Align.Host(child, CurrentContext, width, centreX: true);
+        FrameworkElement Host(FrameworkElement child, double width, double? centreSpan = null) => Align.Host(child, CurrentContext, width, centreX: true, centreSpan: centreSpan);
 
         /// Hidden "## " of a heading, sized to add space above (more for h1) and a little below.
         /// On the caret's line it shows the hashes as dim text so the level stays visible while editing.
@@ -214,20 +214,28 @@ namespace TaskPad
             Margin = new Thickness(margin),
         };
 
-        FrameworkElement TagGlyph(Tag tag, int len)
+        /// Icons use the same column as a checkbox: centred in the first 3 character cells, text starting at the 5th
+        /// (like "[ ] text"), so checkboxes, badges and bullets line up down the page.
+        FrameworkElement TagGlyph(Tag tag, int tokenLen, int markerLen)
         {
-            double w = _charW * len;
+            bool space = tokenLen > markerLen;
+            double col = _charW * 3, w = col + (space ? _charW : 0);
             switch (tag)
             {
-                case Tag.Bang: return Host(Pill("!", Theme.Bang, Brushes.White, _em * 0.95), w);
-                case Tag.Question: return Host(Pill("?", Theme.Question, Brushes.White, _em * 0.95), w);
-                case Tag.Todo: return Host(Pill("TODO", Theme.Todo, new SolidColorBrush(Color.FromRgb(24, 20, 8)), Math.Max(w - 2, _em * 2.2)), w);
-                case Tag.Dash: return Host(Glyph("•", Theme.Dash, 1.15, FontWeights.Normal), w);
-                case Tag.Star: return Host(Glyph("★", Theme.Star, 0.95, FontWeights.Normal), w);
-                case Tag.Arrow: return Host(Glyph("❯", Theme.Arrow, 0.9, FontWeights.Bold), w);
-                case Tag.Back: return Host(Glyph("❮", Theme.Back, 0.9, FontWeights.Bold), w);
-                case Tag.Slash: return Host(Glyph("✓", Theme.Slash, 0.95, FontWeights.Bold), w);
-                default: return Host(new Canvas(), w);
+                case Tag.Bang: return Host(Pill("!", Theme.Bang, Brushes.White, _em * 0.95), w, col);
+                case Tag.Question: return Host(Pill("?", Theme.Question, Brushes.White, _em * 0.95), w, col);
+                case Tag.Todo:
+                {
+                    // the TODO pill is wider than the column; it keeps its own width
+                    double tw = _charW * tokenLen, span = tw - (space ? _charW : 0);
+                    return Host(Pill("TODO", Theme.Todo, new SolidColorBrush(Color.FromRgb(24, 20, 8)), Math.Max(span - 2, _em * 2.2)), tw, span);
+                }
+                case Tag.Dash: return Host(Glyph("•", Theme.Dash, 1.15, FontWeights.Normal), w, col);
+                case Tag.Star: return Host(Glyph("★", Theme.Star, 0.95, FontWeights.Normal), w, col);
+                case Tag.Arrow: return Host(Glyph("❯", Theme.Arrow, 0.9, FontWeights.Bold), w, col);
+                case Tag.Back: return Host(Glyph("❮", Theme.Back, 0.9, FontWeights.Bold), w, col);
+                case Tag.Slash: return Host(Glyph("✓", Theme.Slash, 0.95, FontWeights.Bold), w, col);
+                default: return Host(new Canvas(), w, col);
             }
         }
 

@@ -147,7 +147,8 @@ namespace TaskPad
                     info.Tag = tag;
                     info.TagStart = i;
                     info.TagLen = len;
-                    info.Tokens.Add(new Tok(TokKind.Tag, i, len));
+                    // the token includes one following space so the icon can take the same column as a checkbox
+                    info.Tokens.Add(new Tok(TokKind.Tag, i, len + (i + len < n && t[i + len] == ' ' ? 1 : 0)));
                     info.ContentStart = Skip(t, i + len);
                     return info;
                 }
