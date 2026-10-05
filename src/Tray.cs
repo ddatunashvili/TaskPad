@@ -186,16 +186,24 @@ namespace TaskPad
         public static void CheckReminders()
         {
             var now = DateTime.Now;
+            bool rang = false;
             List<Agenda.Entry> items;
             try { items = Agenda.Collect(); } catch { return; }
             foreach (var e in items.Where(x => !x.Done))
             {
                 var key = (e.Path ?? e.Name) + "|" + e.Text + "|" + e.When.ToString("o");
                 if (e.When > _lastTick && e.When <= now && Notified.Add(key + "|due"))
+                {
                     Notify("⏰ Due now", e.Text + "  ·  " + e.Name, e);
+                    rang = true;
+                }
                 else if (e.HasTime && e.When - TimeSpan.FromMinutes(15) > _lastTick && e.When - TimeSpan.FromMinutes(15) <= now && Notified.Add(key + "|soon"))
+                {
                     Notify("⏰ Due in 15 minutes", e.Text + "  ·  " + e.Name, e);
+                    rang = true;
+                }
             }
+            if (rang) Sound.Play(Sound.Fx.Reminder);
             _lastTick = now;
         }
     }

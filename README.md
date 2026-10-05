@@ -276,7 +276,7 @@ It is per-user (HKCU), so no admin rights are needed. On Windows 11 the entries 
 
 `TaskPad.ini` is created next to the exe (portable). Options: `font`, `fontSize`, `wordWrap`,
 `autoSaveDelayMs`, `indentSize`, `leftMargin`, `imagePreviewHeight` (0 = chips), `commentWidth`, `commentHeight`, `commentsMode` (`hover`/`margin`),
-`commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`), `restoreSession`, `autoSave`,
+`commentMarginWidth`, `author`, `autoUpdate` (`ask`/`auto`/`off`), `restoreSession`, `autoSave`, `sounds` (off by default; `⋯` → Settings → **Sound effects**),
 `markerSpacing` (extra px around task/icon lines and headings; `0` = compact), `theme` (`dark`/`light`), `codeTheme`. Install [Comic Mono](https://dtinth.github.io/comic-mono-font/)
 for the intended look; it falls back to Cascadia Mono / Consolas.
 

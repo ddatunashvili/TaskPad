@@ -315,6 +315,7 @@ namespace TaskPad
                     var text = _reply.Text.Trim();
                     if (text.Length == 0) return;
                     Comments.Update(_ed.Document, Start, t => { t.Add(CommentThread.New(text)); return t; });
+                    Sound.Play(Sound.Fx.Comment);
                     _reply.Text = "";
                     Build();
                     FocusReply();
@@ -736,6 +737,7 @@ namespace TaskPad
                 doc.Replace(s, len, markup);
                 _ed.TextArea.ClearSelection();
                 _ed.CaretOffset = s + markup.Length;
+                Sound.Play(Sound.Fx.Comment);
             }
             _editor.IsOpen = false;
         }

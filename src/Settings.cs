@@ -13,6 +13,7 @@ namespace TaskPad
         public bool WordWrap = true;
         public int AutoSaveDelayMs = 1000;
         public bool AutoSave = true;
+        public bool Sounds = false;                // sound effects (ticks, comments, reminders)
         public bool TrayEnabled = true;            // keep running in the tray (reminders, quick capture)
         public string InboxPath = "";             // quick-capture target; empty = Documents\TaskPad\Inbox.task
         public bool WelcomeSeen = false, ShowWelcome = false;
@@ -69,6 +70,7 @@ namespace TaskPad
                 if (map.TryGetValue("trayEnabled", out v)) s.TrayEnabled = v != "false";
                 if (map.TryGetValue("inboxPath", out v)) s.InboxPath = v;
                 if (map.TryGetValue("autoSave", out v)) s.AutoSave = v != "false";
+                if (map.TryGetValue("sounds", out v)) s.Sounds = v == "true";
                 if (map.TryGetValue("autoSaveDelayMs", out v)) s.AutoSaveDelayMs = (int)D(v, s.AutoSaveDelayMs);
                 if (map.TryGetValue("imagePreviewHeight", out v)) s.ImagePreviewHeight = Math.Max(0, D(v, s.ImagePreviewHeight));
                 if (map.TryGetValue("commentWidth", out v)) s.CommentWidth = D(v, s.CommentWidth);
@@ -105,6 +107,7 @@ namespace TaskPad
                     "fontSize=" + FontSize.ToString(ci),
                     "wordWrap=" + (WordWrap ? "true" : "false"),
                     "autoSave=" + (AutoSave ? "true" : "false"),
+                    "sounds=" + (Sounds ? "true" : "false"),
                     "trayEnabled=" + (TrayEnabled ? "true" : "false"),
                     "inboxPath=" + InboxPath,
                     "welcomeSeen=" + (WelcomeSeen ? "true" : "false"),

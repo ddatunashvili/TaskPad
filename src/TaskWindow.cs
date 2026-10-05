@@ -754,6 +754,13 @@ namespace TaskPad
                 if (st.AutoSave) foreach (var d in Workspace.Docs.Where(d => d.Dirty && d.Path != null).ToList()) d.Save(this, false);
                 Toast(st.AutoSave ? "Auto save on" : "Auto save off — Ctrl+S to save");
             }, st.AutoSave);
+            Item(set, "Sound effects", null, () =>
+            {
+                st.Sounds = !st.Sounds;
+                st.Save();
+                Sound.Play(Sound.Fx.Done);
+                Toast(st.Sounds ? "Sound effects on" : "Sound effects off");
+            }, st.Sounds);
             Item(set, "Install updates automatically", null, () => { st.AutoUpdate = st.AutoUpdate == "auto" ? "ask" : "auto"; st.Save(); }, st.AutoUpdate == "auto");
             Item(set, "Explorer right-click menu", null, () => { if (Shell.IsRegistered) Shell.Unregister(true); else Shell.Register(true); }, Shell.IsRegistered);
             Item(set, "Show welcome page at startup", null, () => { st.ShowWelcome = !st.ShowWelcome; st.Save(); }, st.ShowWelcome);

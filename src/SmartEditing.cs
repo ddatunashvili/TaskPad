@@ -84,7 +84,9 @@ namespace TaskPad
         {
             if (boxOffset + 2 >= doc.TextLength || doc.GetCharAt(boxOffset) != '[') return;
             char c = state == Check.Done ? 'x' : state == Check.Doing ? '/' : state == Check.Cancelled ? '-' : ' ';
+            if (doc.GetCharAt(boxOffset + 1) == c) return;
             doc.Replace(boxOffset + 1, 1, c.ToString());
+            Sound.Play(state == Check.Done ? Sound.Fx.Done : Sound.Fx.Undone);
         }
 
         static void ToggleLines(TextEditor ed)
