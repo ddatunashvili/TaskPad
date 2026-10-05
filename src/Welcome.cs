@@ -234,7 +234,7 @@ def hello(name):
 
 ## 6. Comments
 Select some words below and press Ctrl+M to comment on them:
-The {==launch date==}{>>@taskpad: comments live in the panel on the right — reply there<<} is next Friday.
+The {==launch date==}{>>@taskpad: comments live in the panel on the right — reply there, double-click a message to edit it<<} is next Friday.
 
 ## 7. Images
 Paste a screenshot with Ctrl+V — it is stored inside a .task file, click it to zoom, crop or flip through.

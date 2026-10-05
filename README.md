@@ -83,7 +83,8 @@ a numbered list, headings… or clear the markers. Click the same style again to
 ## Comments
 
 Select words and press <kbd>Ctrl</kbd>+<kbd>M</kbd> (or **💬 Comment** in the toolbar). The text gets a soft highlight;
-hover it to read the note, click the bubble to edit or delete. The box is resizable.
+hover it to read, reply or edit the thread right in the card. Double-click a message to edit it,
+or double-click the quoted text to change which words are highlighted. The box is resizable.
 Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) —
 `{==text==}{>>note<<}` — so the file is still plain text.
 
@@ -92,7 +93,7 @@ Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) �
 ### Google Docs-style margin
 
 Comments show in a panel on the right by default; the right-panel icon in the tab bar (or `⋯` → **Comments panel**) opens/closes it — when closed, hover the highlighted text instead.
-Every thread becomes a card aligned with its line; drag the panel's left edge to resize it. Reply in place (Enter to send), edit ✎ or delete ✕ single messages,
+Every thread becomes a card aligned with its line; drag the panel's left edge to resize it. Reply in place (Enter to send), double-click (or ✎) to edit a message or the quoted text, ✕ to delete a message,
 **✓ Resolve** to remove the thread. Your name comes from `author=` in the ini (default: Windows user name).
 
 <p align="center"><img src="docs/margin-comments.png" alt="Comments in the right margin" width="880"></p>

@@ -57,6 +57,16 @@ namespace TaskPad
             doc.Replace(start + g.Index - m.Index, g.Length, CommentThread.Serialize(thread));
         }
 
+        /// Replaces the highlighted text of the comment at `markupStart` (kept on one line, never empty).
+        public static void SetQuote(TextDocument doc, int markupStart, string text)
+        {
+            if (!Find(doc, markupStart, out int start, out var m) || !m.Groups["t"].Success) return;
+            text = Regex.Replace(text, @"\s*[\r\n]+\s*", " ").Replace("==}", "== }").Trim();
+            if (text.Length == 0) return;
+            var t = m.Groups["t"];
+            doc.Replace(start + t.Index - m.Index, t.Length, text);
+        }
+
         /// All comments in the document: (markup start, match).
         public static IEnumerable<(int Start, Match M)> All(TextDocument doc)
         {
@@ -291,23 +301,7 @@ namespace TaskPad
             if (!Comments.Find(_ed.Document, Start, out _, out var m)) return;
             var thread = CommentThread.Parse(m.Groups["c"].Value);
 
-            if (m.Groups["t"].Success)
-                _stack.Children.Add(new Border
-                {
-                    BorderBrush = Theme.Todo,
-                    BorderThickness = new Thickness(2, 0, 0, 0),
-                    Padding = new Thickness(7, 0, 0, 0),
-                    Margin = new Thickness(0, 0, 0, 8),
-                    Child = new TextBlock
-                    {
-                        Text = m.Groups["t"].Value,
-                        Foreground = Theme.FgDim,
-                        FontFamily = new FontFamily("Segoe UI"),
-                        FontStyle = FontStyles.Italic,
-                        FontSize = 12,
-                        TextTrimming = TextTrimming.CharacterEllipsis,
-                    },
-                });
+            if (m.Groups["t"].Success) _stack.Children.Add(Quote(m.Groups["t"].Value));
 
             for (int i = 0; i < thread.Count; i++) _stack.Children.Add(Entry(thread[i], i));
 
@@ -355,7 +349,8 @@ namespace TaskPad
             head.Children.Add(name);
             if (e.Date != null)
                 head.Children.Add(new TextBlock { Text = "  " + e.Date, Foreground = Theme.FgFaint, FontFamily = new FontFamily("Segoe UI"), FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
-            var tools = new StackPanel { Orientation = Orientation.Horizontal, Opacity = 0 };
+            // dim until hovered, so editing is discoverable without cluttering the card
+            var tools = new StackPanel { Orientation = Orientation.Horizontal, Opacity = 0.35 };
             DockPanel.SetDock(tools, Dock.Right);
             head.Children.Add(tools);
 
@@ -367,19 +362,20 @@ namespace TaskPad
                 FontSize = 13,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 2, 0, 0),
+                ToolTip = "Double-click to edit",
             };
             var holder = new StackPanel { Margin = new Thickness(0, index == 0 ? 0 : 8, 0, 0), Background = Brushes.Transparent };
             holder.Children.Add(head);
             holder.Children.Add(body);
             holder.MouseEnter += (s, a) => tools.Opacity = 1;
-            holder.MouseLeave += (s, a) => tools.Opacity = 0;
+            holder.MouseLeave += (s, a) => tools.Opacity = 0.35;
 
-            tools.Children.Add(Link("✎", "Edit", () =>
+            void StartEdit()
             {
+                if (!holder.Children.Contains(body)) return;
                 var box = Box("");
                 box.Text = e.Text;
-                int i = holder.Children.IndexOf(body);
-                holder.Children[i] = box;
+                holder.Children[holder.Children.IndexOf(body)] = box;
                 box.PreviewKeyDown += (s, a) =>
                 {
                     if (a.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
@@ -391,18 +387,74 @@ namespace TaskPad
                             if (text.Length == 0) t.RemoveAt(index); else t[index].Text = text;
                             return t;
                         });
-                        Build();
+                        if (Start < 0 || !Comments.Find(_ed.Document, Start, out _, out _)) Done?.Invoke(); else Build();
                     }
                     else if (a.Key == Key.Escape) { a.Handled = true; Build(); }
                 };
                 Dispatcher.BeginInvoke(new Action(() => { box.Focus(); box.CaretIndex = box.Text.Length; }), DispatcherPriority.Input);
-            }));
+            }
+            body.MouseLeftButtonDown += (s, a) => { if (a.ClickCount == 2) { a.Handled = true; StartEdit(); } };
+            tools.Children.Add(Link("✎", "Edit (or double-click the message)", StartEdit));
             tools.Children.Add(Link("✕", "Delete this message", () =>
             {
                 Comments.Update(_ed.Document, Start, t => { t.RemoveAt(index); return t; });
                 if (Start < 0 || !Comments.Find(_ed.Document, Start, out _, out _)) Done?.Invoke(); else Build();
             }));
             return holder;
+        }
+
+        /// The highlighted text; double-click (or ✎) to change it in place. One line, Enter saves, Esc cancels.
+        UIElement Quote(string quote)
+        {
+            var text = new TextBlock
+            {
+                Text = quote,
+                Foreground = Theme.FgDim,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontStyle = FontStyles.Italic,
+                FontSize = 12,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "Double-click to edit the commented text",
+            };
+            var row = new DockPanel { LastChildFill = true, Background = Brushes.Transparent };
+            var frame = new Border
+            {
+                BorderBrush = Theme.Todo,
+                BorderThickness = new Thickness(2, 0, 0, 0),
+                Padding = new Thickness(7, 0, 0, 0),
+                Margin = new Thickness(0, 0, 0, 8),
+                Child = row,
+            };
+
+            void StartEdit()
+            {
+                if (!row.Children.Contains(text)) return;
+                var box = Box("");
+                box.AcceptsReturn = false;
+                box.TextWrapping = TextWrapping.NoWrap;
+                box.FontSize = 12;
+                box.Text = quote;
+                row.Children.Clear();
+                row.Children.Add(box);
+                box.PreviewKeyDown += (s, a) =>
+                {
+                    if (a.Key == Key.Enter) { a.Handled = true; Comments.SetQuote(_ed.Document, Start, box.Text); Build(); }
+                    else if (a.Key == Key.Escape) { a.Handled = true; Build(); }
+                };
+                Dispatcher.BeginInvoke(new Action(() => { box.Focus(); box.SelectAll(); }), DispatcherPriority.Input);
+            }
+
+            var edit = Link("✎", "Edit the commented text", StartEdit);
+            edit.Opacity = 0;
+            edit.VerticalAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(edit, Dock.Right);
+            row.Children.Add(edit);
+            row.Children.Add(text);
+            row.MouseEnter += (s, a) => edit.Opacity = 1;
+            row.MouseLeave += (s, a) => edit.Opacity = 0;
+            text.MouseLeftButtonDown += (s, a) => { if (a.ClickCount == 2) { a.Handled = true; StartEdit(); } };
+            return frame;
         }
 
         static readonly Color[] Palette =
@@ -475,12 +527,10 @@ namespace TaskPad
     {
         readonly TextEditor _ed;
         readonly Popup _card, _editor, _thread;
-        readonly StackPanel _cardStack = new StackPanel();
         readonly TextBox _box;
         readonly Border _editFrame;
         readonly DispatcherTimer _hideTimer;
         (int Start, int Length)? _newRange;
-        int _cardStart = -1;
 
         public CommentMargin Margin;
 
@@ -497,24 +547,23 @@ namespace TaskPad
             _ed = ed;
             var tv = ed.TextArea.TextView;
 
-            // ---- hover card (read-only)
-            var cardBorder = Frame(new Border { Child = _cardStack, Padding = new Thickness(12, 9, 12, 9) });
-            cardBorder.MaxWidth = 420;
+            // ---- hover card: the full thread, so messages can be read, edited and answered in place
             _card = new Popup
             {
                 AllowsTransparency = true,
                 Placement = PlacementMode.Relative,
                 PlacementTarget = tv,
                 StaysOpen = true,
-                Focusable = false,
                 PopupAnimation = PopupAnimation.Fade,
-                Child = cardBorder,
             };
-            cardBorder.MouseEnter += (s, e) => _hideTimer.Stop();
-            cardBorder.MouseLeave += (s, e) => HideCardSoon();
-            cardBorder.MouseLeftButtonUp += (s, e) => { if (_cardStart >= 0) Edit(_cardStart); };
             _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            _hideTimer.Tick += (s, e) => { _hideTimer.Stop(); _card.IsOpen = false; };
+            _hideTimer.Tick += (s, e) =>
+            {
+                _hideTimer.Stop();
+                // keep it while you type in it or point at it
+                if (_card.Child is ThreadCard c && (c.IsEditing || c.IsMouseOver)) return;
+                _card.IsOpen = false;
+            };
 
             // ---- new comment box (resizable)
             _box = new TextBox
@@ -608,20 +657,15 @@ namespace TaskPad
         public void ShowCard(int markupStart, FrameworkElement near, Point? at = null)
         {
             if (_editor.IsOpen || _thread.IsOpen || Comments.MarginMode) return;
-            if (!Comments.Find(_ed.Document, markupStart, out int start, out var m)) return;
+            if (!Comments.Find(_ed.Document, markupStart, out int start, out _)) return;
             _hideTimer.Stop();
-            _cardStart = start;
-            _cardStack.Children.Clear();
-            var thread = CommentThread.Parse(m.Groups["c"].Value);
-            foreach (var e in thread)
-            {
-                var tb = new TextBlock { TextWrapping = TextWrapping.Wrap, FontFamily = new FontFamily("Segoe UI"), FontSize = 13, Foreground = Theme.Fg, Margin = new Thickness(0, _cardStack.Children.Count == 0 ? 0 : 6, 0, 0) };
-                if (e.Author != null) tb.Inlines.Add(new System.Windows.Documents.Run(e.Author + "  ") { Foreground = Theme.Todo, FontWeight = FontWeights.SemiBold, FontSize = 12 });
-                tb.Inlines.Add(new System.Windows.Documents.Run(e.Text));
-                _cardStack.Children.Add(tb);
-            }
-            if (thread.Count == 0) _cardStack.Children.Add(new TextBlock { Text = "(empty comment)", Foreground = Theme.FgDim });
-            _cardStack.Children.Add(new TextBlock { Text = thread.Count > 1 ? $"{thread.Count} messages · click to reply" : "click to reply or edit", Foreground = Theme.FgDim, FontFamily = new FontFamily("Segoe UI"), FontSize = 11, Margin = new Thickness(0, 6, 0, 0) });
+            if (_card.IsOpen && _card.Child is ThreadCard open && (open.IsEditing || open.Start == start)) return;
+            var card = new ThreadCard(_ed, start) { Width = Workspace.Settings.CommentWidth };
+            card.MouseEnter += (s, e) => _hideTimer.Stop();
+            card.MouseLeave += (s, e) => HideCardSoon();
+            card.IsKeyboardFocusWithinChanged += (s, e) => { if (!card.IsKeyboardFocusWithin) HideCardSoon(); };
+            card.Done += () => _card.IsOpen = false;
+            _card.Child = card;
             var tv = _ed.TextArea.TextView;
             Point p = at ?? near.TranslatePoint(new Point(0, near.ActualHeight), tv);
             _card.HorizontalOffset = p.X + 4;
