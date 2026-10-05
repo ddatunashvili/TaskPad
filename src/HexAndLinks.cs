@@ -104,8 +104,8 @@ namespace TaskPad
                 BorderBrush = new SolidColorBrush(Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF)),
                 BorderThickness = new Thickness(1),
                 Background = new SolidColorBrush(color),
-                Margin = new Thickness(1, 0, 3, 0),
-                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(1, Math.Max(0, tv.DefaultBaseline - Align.CapMiddle(CurrentContext) - box / 2), 3, 0),
+                VerticalAlignment = VerticalAlignment.Top,
                 Cursor = Cursors.Hand,
             };
             var hash = new TextBlock
@@ -114,12 +114,22 @@ namespace TaskPad
                 FontFamily = props.Typeface.FontFamily,
                 FontSize = em,
                 Foreground = Theme.FgDim,
-                VerticalAlignment = VerticalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
             };
-            var sp = new StackPanel { Orientation = Orientation.Horizontal, Height = tv.DefaultLineHeight, Background = Brushes.Transparent };
+            // shared inline frame: swatch centred on the capitals, "#" on the text baseline
+            Align.Frame(CurrentContext, out double fa, out double fh);
+            swatch.Margin = new Thickness(0);
+            swatch.VerticalAlignment = VerticalAlignment.Top;
+            hash.VerticalAlignment = VerticalAlignment.Top;
+            hash.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var sp = new Canvas { Width = 1 + box + 3 + hash.DesiredSize.Width, Height = fh, Background = Brushes.Transparent };
+            Canvas.SetLeft(swatch, 1);
+            Canvas.SetTop(swatch, Math.Round(fa - Align.CapMiddle(CurrentContext) - box / 2));
+            Canvas.SetLeft(hash, 1 + box + 3);
+            Canvas.SetTop(hash, Align.TextTop(CurrentContext));
             sp.Children.Add(swatch);
             sp.Children.Add(hash);
-            TextBlock.SetBaselineOffset(sp, tv.DefaultBaseline);
+            TextBlock.SetBaselineOffset(sp, fa);
             string value = m.Value;
             swatch.ToolTip = $"{value.ToUpperInvariant()}   rgb({color.R}, {color.G}, {color.B}{(color.A < 255 ? ", " + Math.Round(color.A / 255.0, 2).ToString(CultureInfo.InvariantCulture) : "")})\nclick to copy";
             swatch.MouseLeftButtonDown += (s, e) => { e.Handled = true; HexAndLinks.Copy(swatch, value, false); };

@@ -238,12 +238,12 @@ namespace TaskPad
                 ToolTip = when.ToString(hasTime ? "dddd, d MMMM yyyy  HH:mm" : "dddd, d MMMM yyyy", CultureInfo.InvariantCulture) + (done ? "" : "  —  " + Due.Countdown(when, DateTime.Now)) + "\nclick to change",
                 Opacity = done ? 0.7 : 1,
             };
-            TextBlock.SetBaselineOffset(pill, tv.DefaultBaseline - 1);
+
             pill.Cursor = System.Windows.Input.Cursors.Hand;
             int lineNo = line.LineNumber;
             pill.MouseLeftButtonDown += (s, e) => e.Handled = true;
             pill.MouseLeftButtonUp += (s, e) => { e.Handled = true; DuePicker.Show(_ed, lineNo, offset); };
-            return new InlineObjectElement(m.Length, pill);
+            return new InlineObjectElement(m.Length, Align.Host(pill, CurrentContext));
         }
     }
 }

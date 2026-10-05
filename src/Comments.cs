@@ -204,7 +204,6 @@ namespace TaskPad
                 Height = size,
                 MinWidth = size + 6,
                 Padding = new Thickness(3, 0, 3, 0),
-                Margin = new Thickness(3, 0, 1, 0),
                 CornerRadius = new CornerRadius(size / 2.4, size / 2.4, size / 2.4, 1),
                 Background = Theme.Todo,
                 Cursor = Cursors.Hand,
@@ -221,7 +220,7 @@ namespace TaskPad
                 },
             };
             if (Comments.MarginMode && !bare) return new InlineObjectElement(len, new Canvas { Width = 0 });
-            TextBlock.SetBaselineOffset(icon, size - 1);
+
             var anchor = doc.CreateAnchor(markupStart);
             icon.MouseEnter += (s, e) => { if (!anchor.IsDeleted) _ui.ShowCard(anchor.Offset, icon); };
             icon.MouseLeave += (s, e) => _ui.HideCardSoon();
@@ -232,7 +231,7 @@ namespace TaskPad
                 e.Handled = true;
                 if (!anchor.IsDeleted) _ui.Edit(anchor.Offset);
             };
-            return new InlineObjectElement(len, icon);
+            return new InlineObjectElement(len, Align.Host(icon, CurrentContext, marginLeft: 3, marginRight: 1));
         }
     }
 

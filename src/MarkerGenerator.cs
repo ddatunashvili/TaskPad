@@ -99,18 +99,9 @@ namespace TaskPad
 
         /// Wraps a marker visual. The host is a bit taller than a text line (markerSpacing, half above /
         /// half below) so task and icon lines get breathing room; the line grows to fit it.
-        FrameworkElement Host(FrameworkElement child, double width)
-        {
-            child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            double h = _lineH + _gap;
-            var c = new Canvas { Width = width, Height = h, Background = Brushes.Transparent };
-            // wide glyphs (badges, ★) overflow to the right into the following space, never left where they get clipped
-            Canvas.SetLeft(child, Math.Max(1, Math.Round((width - child.DesiredSize.Width) / 2)));
-            Canvas.SetTop(child, Math.Round((h - child.DesiredSize.Height) / 2));
-            c.Children.Add(child);
-            TextBlock.SetBaselineOffset(c, _baseline + _gap / 2);
-            return c;
-        }
+        /// Wraps a marker visual in the shared inline frame (see Align): centred on the capitals,
+        /// with markerSpacing of breathing room so task and icon lines get a little more height.
+        FrameworkElement Host(FrameworkElement child, double width) => Align.Host(child, CurrentContext, width, centreX: true);
 
         /// Hidden "## " of a heading, sized to add space above (more for h1) and a little below.
         /// On the caret's line it shows the hashes as dim text so the level stays visible while editing.

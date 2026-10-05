@@ -237,7 +237,10 @@ namespace TaskPad
             var path = Images.Resolve(_doc, m.Groups[2].Value);
             var tv = CurrentContext.TextView;
             var anchor = CurrentContext.Document.CreateAnchor(offset);
-            return new InlineObjectElement(m.Length, Build(path, m.Groups[1].Value, tv, anchor));
+            var el = Build(path, m.Groups[1].Value, tv, anchor);
+            // the compact chip shares the inline frame; big inline thumbnails stay as they are
+            if (el.Height <= tv.DefaultLineHeight + 1) el = Align.Host(el, CurrentContext);
+            return new InlineObjectElement(m.Length, el);
         }
 
         static readonly Regex AltWidth = new Regex(@"^(?<alt>.*?)\|(?<w>\d{2,4})$");
@@ -399,7 +402,7 @@ namespace TaskPad
                 var normal = chip.BorderBrush;
                 chip.MouseEnter += (s, e) => { if (!missing) chip.BorderBrush = Theme.Accent; };
                 chip.MouseLeave += (s, e) => chip.BorderBrush = normal;
-                TextBlock.SetBaselineOffset(chip, tv.DefaultBaseline - 1);
+
                 el = chip;
                 if (!missing)
                 {
