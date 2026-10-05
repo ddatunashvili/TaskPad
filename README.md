@@ -93,7 +93,7 @@ Stored as [CriticMarkup](https://github.com/CriticMarkup/CriticMarkup-toolkit) �
 ### Google Docs-style margin
 
 Comments show in a panel on the right by default; the right-panel icon in the tab bar (or `⋯` → **Comments panel**) opens/closes it — when closed, hover the highlighted text instead.
-Every thread becomes a card aligned with its line; drag the panel's left edge to resize it. Reply in place (Enter to send), double-click (or ✎) to edit a message or the quoted text, ✕ to delete a message,
+Every thread becomes a card aligned with its line; drag the panel's left edge to resize it. Reply in place (Enter to send), double-click (or ✎) to edit a message or the quoted text, ⧉ or right-click → Copy to copy it, ✕ to delete a message,
 **✓ Resolve** to remove the thread. Your name comes from `author=` in the ini (default: Windows user name).
 
 <p align="center"><img src="docs/margin-comments.png" alt="Comments in the right margin" width="880"></p>

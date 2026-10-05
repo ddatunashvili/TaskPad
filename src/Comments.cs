@@ -376,7 +376,10 @@ namespace TaskPad
                 if (!holder.Children.Contains(body)) return;
                 var box = Box("");
                 box.Text = e.Text;
-                holder.Children[holder.Children.IndexOf(body)] = box;
+                // a panel slot can't be overwritten in place (WPF throws): take the text out, then put the box in
+                int at = holder.Children.IndexOf(body);
+                holder.Children.RemoveAt(at);
+                holder.Children.Insert(at, box);
                 box.PreviewKeyDown += (s, a) =>
                 {
                     if (a.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
@@ -394,13 +397,18 @@ namespace TaskPad
                 };
                 Dispatcher.BeginInvoke(new Action(() => { box.Focus(); box.CaretIndex = box.Text.Length; }), DispatcherPriority.Input);
             }
-            body.MouseLeftButtonDown += (s, a) => { if (a.ClickCount == 2) { a.Handled = true; StartEdit(); } };
-            tools.Children.Add(Link("✎", "Edit (or double-click the message)", StartEdit));
-            tools.Children.Add(Link("✕", "Delete this message", () =>
+            void Delete()
             {
                 Comments.Update(_ed.Document, Start, t => { t.RemoveAt(index); return t; });
                 if (Start < 0 || !Comments.Find(_ed.Document, Start, out _, out _)) Done?.Invoke(); else Build();
-            }));
+            }
+            body.MouseLeftButtonDown += (s, a) => { if (a.ClickCount == 2) { a.Handled = true; StartEdit(); } };
+            Border copy = null;
+            copy = Link("⧉", "Copy the message", () => Copy(e.Text, copy));
+            tools.Children.Add(copy);
+            tools.Children.Add(Link("✎", "Edit (or double-click the message)", StartEdit));
+            tools.Children.Add(Link("✕", "Delete this message", Delete));
+            holder.ContextMenu = Menu(("Copy", () => Copy(e.Text, null)), ("Edit", StartEdit), ("Delete", Delete));
             return holder;
         }
 
@@ -455,7 +463,32 @@ namespace TaskPad
             row.MouseEnter += (s, a) => edit.Opacity = 1;
             row.MouseLeave += (s, a) => edit.Opacity = 0;
             text.MouseLeftButtonDown += (s, a) => { if (a.ClickCount == 2) { a.Handled = true; StartEdit(); } };
+            row.ContextMenu = Menu(("Copy", () => Copy(quote, null)), ("Edit commented text", StartEdit));
             return frame;
+        }
+
+        /// Copies `text`; `feedback` (a Link) briefly shows ✓.
+        static void Copy(string text, Border feedback)
+        {
+            try { Clipboard.SetText(text); } catch { return; }
+            if (!(feedback?.Child is TextBlock tb)) return;
+            var old = tb.Text;
+            tb.Text = "✓";
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
+            timer.Tick += (s, e) => { timer.Stop(); tb.Text = old; };
+            timer.Start();
+        }
+
+        static ContextMenu Menu(params (string Header, Action Click)[] items)
+        {
+            var m = new ContextMenu();
+            foreach (var (header, click) in items)
+            {
+                var mi = new MenuItem { Header = header };
+                mi.Click += (s, e) => click();
+                m.Items.Add(mi);
+            }
+            return m;
         }
 
         static readonly Color[] Palette =
